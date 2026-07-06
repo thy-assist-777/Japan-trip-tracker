@@ -1,0 +1,529 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root{
+    --bg:#EEF1F0;
+    --card:#FFFFFF;
+    --ink:#14181A;
+    --ink-soft:#5B655F;
+    --green:#3F7D45;
+    --green-soft:#E6EFE1;
+    --red:#B8412B;
+    --red-soft:#F5E1DA;
+    --amber:#C9922E;
+    --line:#D7DCD8;
+    --muted:#8B958F;
+    --sky:#2B6CA3;
+    --sky-soft:#E3EEF6;
+  }
+  *{box-sizing:border-box;}
+  #tracker-root{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding:32px 20px 48px;
+    border-radius:12px;
+  }
+  .masthead{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom:16px;
+  }
+  .masthead h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(22px,4vw,32px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin:0;
+    text-transform:uppercase;
+  }
+  .masthead .sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+  .masthead .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    text-align:right;
+  }
+  .legend{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:28px;
+    line-height:1.6;
+  }
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:18px;
+    margin-bottom:20px;
+  }
+  .ticket{
+    position:relative;
+    background:var(--card);
+    border-radius:10px;
+    border:1px solid var(--line);
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(20,24,26,0.04);
+  }
+  .area-ribbon{
+    background:var(--sky);
+    color:#fff;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.03em;
+    padding:4px 16px;
+  }
+  .ticket .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:14px 16px 10px;
+    gap:10px;
+  }
+  .ticket h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15.5px;
+    font-weight:600;
+    margin:0 0 3px;
+    line-height:1.25;
+  }
+  .ticket h3 a{
+    color:var(--ink);
+    text-decoration:none;
+    border-bottom:1.5px solid var(--amber);
+    transition:color 0.15s ease, border-color 0.15s ease;
+  }
+  .ticket h3 a:hover{
+    color:var(--amber);
+    border-color:var(--ink);
+  }
+  .ticket .loc{
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
+  .drive-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--sky);
+    background:var(--sky-soft);
+    padding:2px 8px;
+    border-radius:10px;
+    margin-top:6px;
+    margin-right:5px;
+  }
+  .drive-tag.car-warning{
+    color:#fff;
+    background:var(--red);
+    font-weight:600;
+  }
+  .fuji-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--green);
+    background:var(--green-soft);
+    padding:2px 8px;
+    border-radius:10px;
+    margin-top:6px;
+  }
+  .price-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .price-tag .amt{
+    font-weight:500;
+    color:var(--ink);
+  }
+  .rating-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    font-weight:500;
+    color:#8A5A15;
+    background:#F3E6CE;
+    padding:4px 10px;
+    border-radius:10px;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .book-note{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    padding:0 16px 10px;
+  }
+  .split{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .split::before{
+    content:'';
+    position:absolute;
+    top:0;bottom:0;left:50%;
+    border-left:2px dashed var(--line);
+  }
+  .notch-top,.notch-bottom{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    width:14px;height:14px;
+    border-radius:50%;
+    background:var(--bg);
+    z-index:2;
+  }
+  .notch-top{top:-7px;}
+  .notch-bottom{bottom:-7px;}
+  .half{
+    padding:12px 14px 16px;
+  }
+  .half.pros{background:var(--green-soft);}
+  .half.cons{background:var(--red-soft);}
+  .half .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.06em;
+    margin-bottom:8px;
+    font-weight:500;
+  }
+  .half.pros .label{color:var(--green);}
+  .half.cons .label{color:var(--red);}
+  .half ul{
+    margin:0;
+    padding-left:16px;
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--ink);
+  }
+  .half li{margin-bottom:5px;}
+  .half li:last-child{margin-bottom:0;}
+  .cluster-map-wrap{
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    margin-top:6px;
+    height:340px;
+  }
+  .cluster-map-caption{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--muted);
+    padding:6px 4px 0;
+    display:flex;
+    justify-content:space-between;
+  }
+  .cluster-map-caption a{color:var(--ink-soft);}
+  .stay-pin{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+    transform:translate(-14px,-14px);
+  }
+  .stay-pin .icon{
+    width:28px;height:28px;
+    border-radius:8px;
+    background:#2B6CA3;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    box-shadow:0 1px 3px rgba(0,0,0,0.35);
+    border:2px solid #fff;
+    flex-shrink:0;
+  }
+  .stay-pin .label{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    color:#1a1a1a;
+    background:rgba(255,255,255,0.92);
+    padding:2px 7px;
+    border-radius:5px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.15);
+  }
+  .landmark-pin{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+    transform:translate(-10px,-10px);
+  }
+  .landmark-pin .icon{
+    width:20px;height:20px;
+    border-radius:50%;
+    background:#8B958F;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.35);
+    border:2px solid #fff;
+    flex-shrink:0;
+  }
+  .landmark-pin .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:#5B655F;
+    background:rgba(255,255,255,0.9);
+    padding:1px 6px;
+    border-radius:4px;
+  }
+  @media (max-width:520px){
+    .split{grid-template-columns:1fr;}
+    .split::before{display:none;}
+    .half.pros{border-bottom:2px dashed var(--line);}
+    .notch-top,.notch-bottom{display:none;}
+  }
+</style>
+
+<div id="tracker-root">
+  <div class="masthead">
+    <div>
+      <h1>Mt. Fuji / Kawaguchiko Stay Tracker</h1>
+      <div class="sub">lakeside &amp; forest stays &middot; pros / cons &middot; drive-based, not train-based</div>
+    </div>
+    <div class="count" id="hotel-count"></div>
+  </div>
+  <div class="legend">&#9733; Ratings are Google Maps review scores out of 5. &middot; Prices in GBP (&pound;), approximate &mdash; not a live quote. &middot; The region itself IS train-accessible (direct "Fuji Excursion" limited express from Shinjuku to Kawaguchiko Station, ~2hrs, or JR Chuo Line + Fujikyuko Line via Otsuki) &mdash; but individual properties then rely on a free hotel shuttle, a short walk, or a taxi/car. &middot; <span style="color:#B8412B;font-weight:600;">Red "CAR NEEDED" tag = no shuttle or train-walkable option exists for that property.</span></div>
+
+  <div class="cards" id="cards-1"></div>
+  <div class="cluster-map-wrap" id="map1-wrap"><div id="map1" style="height:100%;"></div></div>
+  <div class="cluster-map-caption">
+    <span>Blue pin = stay &middot; grey pin = landmark (Fuji summit &amp; Lake Kawaguchi, for reference)</span>
+    <a id="map1-link" href="#" target="_blank" rel="noopener noreferrer">Open in Google Maps &rarr;</a>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+
+  const stays = [
+    {
+      name: "The Noborisaka Hotel",
+      type: "Budget Hotel",
+      loc: "Area C &middot; Funatsu, Fujikawaguchiko \u2014 closest of the three to Fuji-Q Highland / Fujiyoshida side",
+      drive: "15\u201325 min walk to Kawaguchiko Station (no late bus)",
+      fuji: "Fuji view \u2014 ask for 3rd floor or higher",
+      rating: 4.3,
+      lat: 35.4892464, lng: 138.7627242,
+      bookingUrl: "https://www.booking.com/hotel/jp/noborizaka.html",
+      priceRange: "\u00a342\u201386",
+      pros: ["Closest of the three to central Fuji/Fujiyoshida area", "Easy to book \u2014 on all major OTAs (Booking, Agoda, Expedia)", "Buffet breakfast consistently praised", "Affordable for the Fuji view you get", "On-site onsen/sauna"],
+      cons: ["Must book early \u2014 popular, sells out in high season", "Ask for 3rd floor or above \u2014 lower floors can have blocked Fuji views", "15\u201325 min walk from Kawaguchiko Station; last local bus is early (~5pm), taxis scarce at night", "A couple of reports of inconsistent front-desk service"]
+    },
+    {
+      name: "\u5922\u898b\u308b\u6cb3\u53e3\u6e56 \u30b3\u30c6\u30fc\u30b8\u6238\u6ca2\u30bb\u30f3\u30bf\u30fc (Cottage Tozawa Center)",
+      type: "Self-Catering Cottage",
+      loc: "Area A &middot; Oishi, north shore of Lake Kawaguchi \u2014 near Oishi Park, one of the best Fuji-over-lake photo spots",
+      drive: "~15 min drive to Kawaguchiko Station; no shuttle offered, book direct only",
+      carOnly: true,
+      fuji: "Unobstructed Fuji-over-lake view",
+      rating: 4.4,
+      lat: 35.5227051, lng: 138.7538461,
+      bookingUrl: "https://www.k-tozawa.com/cottage.php#cottage_price",
+      priceRange: "\u00a358\u2013120 (smaller cottages; larger group cottages run higher)",
+      pros: ["Highest Google rating of the three", "Kitchen in every unit + restaurant downstairs on site", "Can BBQ on site (charcoal house or terrace, small fee)", "Affordable for the quality of Fuji/lake view", "Lakeside, near a private beach-access spot"],
+      cons: ["Basic amenities \u2014 towels/toiletries often need requesting or bringing your own", "Thin walls \u2014 noise from neighbouring cottages reported", "Cleanliness inconsistent in a few reviews (bedding, mattress comfort)", "Only bookable via their own website (k-tozawa.com) \u2014 no price comparison across OTAs"]
+    },
+    {
+      name: "Rakuten STAY VILLA Fuji Kawaguchiko Forest",
+      type: "Private Villa",
+      area: "",
+      loc: "Funatsu, Fujikawaguchiko \u2014 forest setting away from the lake shore",
+      drive: "~10 min drive to Kawaguchiko Station / town centre; no public transport link at all",
+      carOnly: true,
+      fuji: "No direct Fuji view \u2014 forest/nature setting instead",
+      rating: 4.1,
+      lat: 35.4787481, lng: 138.7605931,
+      bookingUrl: "https://www.agoda.com/en-gb/rakuten-stay-villa-lake-kawaguchiko-forest-h31581954/hotel/fujikawaguchiko-jp.html",
+      priceRange: "\u00a3190\u2013340 (whole private villa, up to 8\u201310 people)",
+      pros: ["Modern, newly built (2022) architecture", "Full kitchen for cooking, in every villa", "Private sauna + artificial hot spring bath in every unit", "Great for stargazing \u2014 forest setting, low light pollution", "Whole-villa privacy, good for groups; some pet-friendly units"],
+      cons: ["No public transport nearby \u2014 a car is essential", "Priciest per night of the three (though it's a whole villa, not a room)", "Thin walls between villas reported by some guests", "Unmanned check-in (self-service via tablet) \u2014 can be fiddly for first-timers"]
+    },
+    {
+      name: "Mizno Hotel (\u6c34\u4e4b\u5bb6\u9152\u5e97/\u6e56\u4e4b\u98ef\u5e97)",
+      type: "Onsen Ryokan (Boutique)",
+      loc: "Azagawa, Fujikawaguchiko \u2014 lakeside, boutique-scale (not a big chain)",
+      drive: "Free shuttle from Kawaguchiko Station, 15:00\u201318:00 (call hotel on arrival)",
+      fuji: "Private balcony Fuji + lake views; visible from bed in some rooms",
+      rating: 4.7,
+      lat: 35.5137708, lng: 138.7736759,
+      bookingUrl: "https://www.booking.com/hotel/jp/mizuno.html",
+      priceRange: "\u00a3137+ (double room, low-season starting rate)",
+      pros: ["Highest Google rating of every stay tracked for this trip (4.7/5)", "Private balcony with direct Fuji/lake view in top rooms", "Rooftop Sky Bar with 180\u00b0 Fuji views", "Both indoor and outdoor onsen overlook the lake", "Free bicycle rental, quality yukata + capsule coffee machine in-room"],
+      cons: ["Boutique-scale \u2014 fewer rooms than the big resort hotels, likely to sell out first in high season", "Premium pricing to match the experience", "Fuji view is of course weather-dependent, same risk as anywhere on the lake"]
+    },
+    {
+      name: "Koraku Onyado Fujiginkei (\u5bcc\u58eb\u541f\u666f\u65c5\u9928)",
+      type: "Onsen Ryokan",
+      loc: "Azagawa, Fujikawaguchiko \u2014 traditional ryokan style",
+      drive: "Free shuttle from Kawaguchiko Station, 14:30\u201320:00 window",
+      fuji: "Rooftop outdoor onsen + new-wing rooms face Fuji/lake; occasional 'reverse Fuji' reflection",
+      rating: 4.5,
+      lat: 35.5134672, lng: 138.7726216,
+      bookingUrl: "https://www.booking.com/hotel/jp/koraku-onyado-fujiginkei.html",
+      priceRange: "\u00a3121+ (double room, low-season starting rate)",
+      pros: ["Traditional kaiseki dinner and breakfast consistently praised", "Rooftop + indoor onsen both well-reviewed, Fuji views from the bath", "Some Chinese-speaking staff on-site", "Free shuttle service to/from Kawaguchiko Station"],
+      cons: ["Ask specifically for the new wing and a higher floor \u2014 old wing / lower floors can have the view partially blocked", "Shuttle only runs in a set afternoon/evening window \u2014 need to time your arrival", "About a 10-min walk to the nearest convenience store (Lawson)"]
+    },
+    {
+      name: "La Vista Fuji Kawaguchiko",
+      type: "Onsen Resort",
+      loc: "Kawaguchi, Fujikawaguchiko \u2014 hillside, South-of-France themed",
+      drive: "Free shuttle to/from Kawaguchiko Station, ~20 min",
+      fuji: "Most rooms face Fuji directly; some have heart-shaped in-room tubs",
+      rating: 4.4,
+      lat: 35.5296567, lng: 138.7627726,
+      bookingUrl: "https://www.booking.com/hotel/jp/la-vista-fujikawaguchiko.html",
+      priceRange: "\u00a3100+ (double room, lowest starting rate of the 6 onsen options)",
+      pros: ["Lowest starting price of the onsen-ryokan group here, without giving up the Fuji view", "Provence/South-France theming is distinctive and very photogenic", "4 types of onsen including private rental baths", "Free late-night ramen + popsicles after bathing", "Free shuttle bus to/from Kawaguchiko Station"],
+      cons: ["No restaurants or convenience stores nearby \u2014 stock up before heading up the hill", "One detailed report of a power outage disrupting a stay (handled well by staff, but worth knowing)", "Can feel a little dated in parts despite the theming"]
+    },
+    {
+      name: "Fujisan Onsen Hotel Kaneyamaen (\u9418\u5c71\u82d1\u98ef\u5e97)",
+      type: "Onsen Resort (Large)",
+      loc: "Kamiyoshidahigashi, Fujiyoshida \u2014 near Fuji-Q Highland side of town",
+      drive: "Free shuttle every 30 min to/from Fujisan Station",
+      fuji: "Rooftop open-air onsen + many rooms with a direct Fuji view",
+      rating: 4.4,
+      lat: 35.4667086, lng: 138.8133878,
+      bookingUrl: "https://www.booking.com/hotel/jp/kaneyamaen.html",
+      priceRange: "\u00a3301+ (double room, low-season starting rate)",
+      pros: ["Nationally recognised \u2014 listed among Japan's top 250 onsen ryokan per the source article", "Large traditional Japanese garden (~25,000 tsubo) with seasonal scenery", "Nightly taiko drum show plus seasonal events (cherry blossom, fireflies, fireworks, autumn leaves, New Year)", "Frequent free shuttle (every 30 min) to Fujisan Station", "Resort-scale facilities: pool, wine lounge, wedding chapel"],
+      cons: ["Highest price bracket of the mid-tier options here", "Shuttle-dependent rather than walkable to anything", "Large resort feel rather than an intimate ryokan experience"]
+    },
+    {
+      name: "Bessho Sasa (\u7136\u7136\u5225\u5885)",
+      type: "Onsen Ryokan (Luxury)",
+      loc: "Same complex as Kaneyamaen, upper executive floors (4th\u20135th)",
+      drive: "Free shuttle every 30 min to/from Fujisan Station",
+      fuji: "Every room has its own private open-air Fuji-view bath",
+      rating: 4.5,
+      lat: 35.466587, lng: 138.8131301,
+      bookingUrl: "https://www.booking.com/hotel/jp/bessho-sasa.html",
+      priceRange: "\u00a3545+ (double room, low-season starting rate) \u2014 by far the priciest stay tracked for this trip",
+      pros: ["Private open-air onsen with a Fuji view in every single room (not just some, unlike Kaneyamaen)", "Private guest lounge with free coffee/wine and massage chairs facing Fuji", "In-room kaiseki dinner \u2014 more exclusive than Kaneyamaen's shared dining room", "Shares Kaneyamaen's garden and facilities, plus its own perks on top"],
+      cons: ["By far the most expensive option in this entire tracker \u2014 roughly 4\u20135x the mid-range options", "One detailed review flagged the premium wagyu dinner as underwhelming for the price", "Still shuttle-dependent, same as Kaneyamaen"]
+    },
+    {
+      name: "Ubuya (\u7523\u5c4b\u98ef\u5e97)",
+      type: "Onsen Ryokan",
+      loc: "Azagawa, Fujikawaguchiko \u2014 directly on the lake",
+      drive: "Free shuttle to/from Kawaguchiko Station",
+      fuji: "Every room guarantees a Fuji view \u2014 no exceptions",
+      rating: 4.4,
+      lat: 35.512822, lng: 138.7689064,
+      bookingUrl: "https://www.ubuya.co.jp/en/",
+      priceRange: "\u00a3308+ (double room, low-season starting rate)",
+      pros: ["100% of rooms guarantee a Fuji view \u2014 no risk of a blocked-view room like some competitors", "Arguably the best straight-on lake+Fuji sightline of the whole group", "Free shuttle to/from Kawaguchiko Station", "A fun differentiator: small photo studio with Fuji-themed costumes for photos"],
+      cons: ["Recurring complaint: the 'private bath' rooms are just a regular tub with tap water, not a real private onsen \u2014 worth confirming before paying the upsell", "Buffet breakfast/dinner quality gets mixed reviews relative to the price point", "Booking the balcony-onsen room specifically can be finicky \u2014 one reviewer said it only worked via certain language versions of the site"]
+    },
+    {
+      name: "Konansou (\u6e56\u5357\u838a)",
+      type: "Onsen Ryokan",
+      loc: "Funatsu, Fujikawaguchiko \u2014 lakeside, south shore near the sightseeing-boat pier",
+      drive: "Free shuttle from Kawaguchiko Station (9am\u20135pm, call on arrival) or ~10 min walk",
+      fuji: "Rooftop footbath + 3 private onsen baths, all with Fuji views; some Fuji-facing rooms",
+      rating: 4.7,
+      lat: 35.5036357, lng: 138.7684111,
+      bookingUrl: "https://www.booking.com/hotel/jp/konanso.html",
+      priceRange: "\u00a3235+ (double room, low-season starting rate)",
+      pros: ["Tied for the highest rating in this entire tracker (4.7/5, 1,600+ reviews \u2014 the most-reviewed property here)", "Rooftop footbath + 3 reservable private onsen baths, all with Fuji views", "In-room kaiseki dinner consistently praised as a trip highlight", "Most transport-flexible option here \u2014 walkable (~10 min) AND has a free shuttle, so it works with or without a shuttle booking"],
+      cons: ["Premium pricing \u2014 starts around \u00a3235 and climbs for Fuji-view or private-onsen rooms", "A handful of reviews mention dated interiors in spots and inconsistent staff attitude toward some guest groups", "Fuji-view rooms sell out first \u2014 you may end up with a lake-view room instead"]
+    }
+  ];
+
+  const landmarks = [
+    { name: "Mt. Fuji summit", lat: 35.3606, lng: 138.7274 },
+    { name: "Lake Kawaguchi", lat: 35.5065, lng: 138.7455 }
+  ];
+
+  function renderCards(containerId, data){
+    const container = document.getElementById(containerId);
+    container.innerHTML = data.map(h => `
+      <div class="ticket">
+        ${h.type ? `<div class="area-ribbon">${h.type}</div>` : ''}
+        <div class="top">
+          <div>
+            <h3><a href="${h.bookingUrl}" target="_blank" rel="noopener noreferrer">${h.name}</a></h3>
+            <div class="loc">${h.loc}</div>
+            <div class="drive-tag${h.carOnly ? ' car-warning' : ''}">${h.carOnly ? '&#9888;&#65039; CAR NEEDED \u2014 ' : '&#128663; '}${h.drive}</div>
+            <div class="fuji-tag">&#127760; ${h.fuji}</div>
+            <div class="price-tag">Indicative rate: <span class="amt">${h.priceRange}</span>/night</div>
+          </div>
+          <div class="rating-tag">${h.rating.toFixed(1)}/5 Google</div>
+        </div>
+        <div class="split">
+          <div class="notch-top"></div>
+          <div class="half pros">
+            <div class="label">PROS</div>
+            <ul>${h.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>
+          <div class="half cons">
+            <div class="label">CONS</div>
+            <ul>${h.cons.map(c => `<li>${c}</li>`).join('')}</ul>
+          </div>
+          <div class="notch-bottom"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function setMap(elId, linkId, data, landmarks){
+    const map = L.map(elId, {scrollWheelZoom:true}).setView([data[0].lat, data[0].lng], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 19
+    }).addTo(map);
+    const bounds = [];
+    landmarks.forEach(l => {
+      const icon = L.divIcon({
+        html: `<div class="landmark-pin"><div class="icon">&#127956;</div><div class="label">${l.name}</div></div>`,
+        className: '', iconSize: null, iconAnchor: [10, 10]
+      });
+      L.marker([l.lat, l.lng], {icon}).addTo(map).bindPopup(`<b>${l.name}</b>`);
+      bounds.push([l.lat, l.lng]);
+    });
+    data.forEach((h, i) => {
+      const icon = L.divIcon({
+        html: `<div class="stay-pin"><div class="icon">${i+1}</div><div class="label">${h.name.split('(')[0].split(',')[0].slice(0,22)}</div></div>`,
+        className: '', iconSize: null, iconAnchor: [14, 14]
+      });
+      const marker = L.marker([h.lat, h.lng], {icon}).addTo(map);
+      marker.bindPopup(`<b>${h.name}</b><br/>${h.rating.toFixed(1)}/5 Google &middot; ${h.drive}`);
+      bounds.push([h.lat, h.lng]);
+    });
+    if (bounds.length > 1) map.fitBounds(bounds, {padding:[40,40]});
+    const pts = data.map(h => `${h.lat},${h.lng}`).join('/');
+    document.getElementById(linkId).href = `https://www.google.com/maps/dir/${pts}?hl=en`;
+  }
+
+  renderCards('cards-1', stays);
+  document.getElementById('hotel-count').textContent = stays.length + ' stays tracked';
+  setMap('map1', 'map1-link', stays, landmarks);
+
+})();
+</script>
