@@ -1,0 +1,2701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Japan Trip Planner — Oct 24 to Nov 7, 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root {
+    --paper: #F6F1E7;
+    --paper-card: #FFFDF7;
+    --ink: #23201B;
+    --ink-soft: #6B655C;
+    --indigo: #2B3A55;
+    --indigo-soft: #4A5A78;
+    --border: #E1D8C4;
+    --tokyo: #4A7A5A;
+    --hakone: #6B5B95;
+    --kawaguchiko: #4E7CA6;
+    --kyoto: #A6303C;
+    --nara: #8B6D4F;
+    --osaka: #2E6E8E;
+    --hiroshima: #C08A3E;
+    --miyajima: #3E7A82;
+    --foodcoffee: #8C4A3D;
+    --pending: #B8853A;
+    --cat-coffee: #6F4E37;
+    --cat-breakfast: #C9982A;
+    --cat-lunch: #5B8C5A;
+    --cat-dinner: #7A3B46;
+    --cat-snack: #C97B3D;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  #app { max-width: 980px; margin: 0 auto; padding: 28px 20px 56px; }
+
+  .header { text-align: center; margin-bottom: 20px; }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--indigo-soft);
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 800;
+    font-size: 30px;
+    margin: 0 0 6px;
+  }
+
+  .header p { font-size: 13px; color: var(--ink-soft); margin: 0; }
+
+  /* ---------- Mode switcher ---------- */
+  .mode-switch {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 22px 0 30px;
+  }
+  .mode-btn {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 11px 22px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: var(--paper-card);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .mode-btn:hover { border-color: var(--indigo); }
+  .mode-btn.active {
+    background: var(--indigo);
+    border-color: var(--indigo);
+    color: #fff;
+  }
+  .mode-btn:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--indigo);
+    outline-offset: 2px;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ---------- Itinerary view ---------- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 18px;
+    margin: 0 0 22px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  .route-map-wrap {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 8px 4px;
+    margin-bottom: 26px;
+    box-shadow: 0 1px 3px rgba(35,32,27,0.06);
+  }
+  .route-map { width: 100%; height: auto; display: block; border-radius: 6px; overflow: hidden; }
+  .map-caption {
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-style: italic;
+    text-align: center;
+    margin: 8px 4px 2px;
+  }
+
+  table.itinerary, table.compare {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(35,32,27,0.06);
+  }
+
+  table.itinerary th, table.compare th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1.5px solid var(--border);
+    background: #F0EADC;
+  }
+
+  table.itinerary td, table.compare td {
+    padding: 13px 14px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.45;
+  }
+  table.itinerary tr:last-child td, table.compare tr:last-child td { border-bottom: none; }
+
+  td.day-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--city-color);
+    white-space: nowrap;
+    border-left: 5px solid var(--city-color);
+  }
+  td.day-cell .date { display: block; font-weight: 400; color: var(--ink-soft); font-size: 11.5px; margin-top: 2px; }
+
+  td.theme-cell { font-weight: 700; color: var(--ink); }
+  td.theme-cell .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #fff;
+    background: var(--city-color);
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-bottom: 5px;
+  }
+
+  td.notes-cell { color: var(--ink-soft); font-size: 12.5px; }
+
+  tr.pending td { background: #FBF3E4; }
+  tr.pending td.day-cell { border-left-color: var(--pending); color: var(--pending); }
+  tr.pending .tag.pending-tag { background: var(--pending); }
+  .pending-note { display: block; margin-top: 6px; font-size: 11px; font-style: italic; color: var(--pending); }
+
+  .city-select { display: none; }
+  .editing-itin .tag { display: none; }
+  .editing-itin .city-select {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1.5px solid var(--indigo);
+    background: #fff;
+    color: var(--ink);
+    margin-bottom: 5px;
+    cursor: pointer;
+  }
+
+  .section-break {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 46px 0 16px;
+    text-align: center;
+    position: relative;
+  }
+  .section-break::before, .section-break::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 30%;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-break::before { left: 0; }
+  .section-break::after { right: 0; }
+
+  .compare-intro {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    max-width: 640px;
+    margin: 0 auto 22px;
+  }
+
+  .itin-edit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .itin-edit-hint {
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .theme-text, .plan-text {
+    display: inline;
+    border-radius: 3px;
+  }
+  .editing-itin .theme-text, .editing-itin .plan-text {
+    outline: 1.5px dashed var(--indigo-soft);
+    outline-offset: 2px;
+    background: rgba(43,58,85,0.04);
+    cursor: text;
+    padding: 1px 3px;
+  }
+  .editing-itin .theme-text:focus, .editing-itin .plan-text:focus {
+    outline: 1.5px solid var(--indigo);
+    background: #fff;
+  }
+
+  table.compare th.hakone-col { background: var(--hakone); color: #fff; }
+  table.compare th.kawaguchiko-col { background: var(--kawaguchiko); color: #fff; }
+  table.compare th.aspect-col { background: #F0EADC; color: var(--ink-soft); width: 18%; }
+  table.compare td.aspect { font-weight: 700; color: var(--ink); background: #FAF7EF; }
+
+  .verdict {
+    margin-top: 22px;
+    padding: 16px 20px;
+    background: var(--paper-card);
+    border: 1.5px dashed var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .verdict strong { color: var(--ink); }
+
+  @media (max-width: 700px) {
+    table.itinerary, table.itinerary thead, table.itinerary tbody, table.itinerary th, table.itinerary td, table.itinerary tr { display: block; }
+    table.itinerary th { display: none; }
+    table.itinerary tr { border-bottom: 2px solid var(--border); padding: 10px 0; }
+    td.day-cell, td.theme-cell, td.notes-cell { border-left: none; padding: 4px 14px; }
+    td.day-cell { border-left: 5px solid var(--city-color); }
+    table.compare, table.compare thead, table.compare tbody, table.compare th, table.compare td, table.compare tr { display: block; }
+    table.compare thead { display: none; }
+    table.compare tr { border-bottom: 2px solid var(--border); padding: 8px 0; }
+    table.compare td.aspect { font-weight: 800; }
+  }
+
+  /* ---------- Attractions tracker view ---------- */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+    scrollbar-width: thin;
+  }
+  .tab-btn {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: var(--paper-card);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .tab-btn:hover { border-color: var(--city-color, var(--indigo)); }
+  .tab-btn.active {
+    background: var(--city-color, var(--indigo));
+    border-color: var(--city-color, var(--indigo));
+    color: #fff;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  .stamp {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    border: 2.5px solid var(--city-color);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    transform: rotate(-7deg);
+    flex-shrink: 0;
+    animation: stamp-in 0.35s ease;
+  }
+  .stamp::before {
+    content: '';
+    position: absolute; inset: 6px;
+    border-radius: 50%;
+    border: 1px solid var(--city-color);
+    opacity: 0.55;
+  }
+  .stamp span {
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--city-color);
+    text-align: center;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+  }
+  .stamp-grain {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    mix-blend-mode: multiply;
+    opacity: 0.12;
+    pointer-events: none;
+  }
+  @keyframes stamp-in {
+    from { opacity: 0; transform: rotate(-7deg) scale(0.7); }
+    to { opacity: 1; transform: rotate(-7deg) scale(1); }
+  }
+
+  .clear-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .clear-btn:hover { border-color: var(--kyoto); color: var(--kyoto); }
+
+  .add-form { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .add-form input, .add-form select, .card-day-select {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 14px;
+    padding: 11px 14px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--paper-card);
+    color: var(--ink);
+  }
+  .add-form input::placeholder { color: #A69C89; }
+  .add-form .name-input { flex: 1 1 200px; }
+  .add-form .notes-input { flex: 2 1 260px; }
+  .add-form .day-select { flex: 0 1 230px; font-size: 13px; }
+  .add-form .category-select { flex: 0 1 170px; font-size: 13px; }
+
+  .cat-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--cat-color, var(--ink-soft));
+    margin-bottom: 4px;
+  }
+
+  .card-day-select {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: var(--ink-soft);
+    max-width: 150px;
+  }
+
+  .tracker-addons { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tracker-addons:empty { margin-top: 0; }
+  .addon-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(35,32,27,0.03);
+    border: 1px solid var(--chip-color, var(--indigo));
+    color: var(--chip-color, var(--indigo));
+    white-space: nowrap;
+  }
+
+  .add-btn {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 11px 18px;
+    border-radius: 6px;
+    border: none;
+    background: var(--city-color, var(--indigo));
+    color: #fff;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+  .add-btn:hover { filter: brightness(1.08); }
+
+  .list { display: flex; flex-direction: column; }
+
+  .card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 46px 1fr auto auto auto;
+    align-items: center;
+    gap: 4px 10px;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--city-color);
+    border-radius: 4px;
+    padding: 14px 16px 14px 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(35,32,27,0.05);
+    cursor: grab;
+  }
+  .card.dragging { opacity: 0.4; }
+  .card.drag-over { border-top: 2px dashed var(--city-color); }
+  .card.view-only { grid-template-columns: 46px 1fr auto; cursor: default; }
+  .card:active { cursor: grabbing; }
+
+  .rating-widget { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .rating-existing { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
+  .rating-person-row { font-size: 11px; color: var(--ink-soft); display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .rating-person-name { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--indigo); }
+  .rating-stars-display { color: var(--pending); letter-spacing: 1px; }
+  .rating-comment-display { font-style: italic; }
+  .rating-input-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .rating-star-btn { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--border); padding: 1px; line-height: 1; }
+  .rating-star-btn.filled { color: var(--pending); }
+  .rating-comment-input {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11.5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    flex: 1 1 140px;
+    min-width: 100px;
+    background: var(--paper-card);
+    color: var(--ink);
+  }
+
+  .name-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .name-bar input {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--paper-card);
+    color: var(--ink);
+    width: 140px;
+  }
+
+  .summary-sort-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; }
+  .summary-row {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .summary-row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .summary-row-name { font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--ink); }
+  .summary-row-avg { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--pending); white-space: nowrap; }
+  .summary-row-cat { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+  .summary-row-people { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+
+  .rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--city-color);
+    text-align: center;
+    line-height: 1.2;
+    border-right: 1px dashed var(--border);
+    padding-right: 8px;
+  }
+  .rank .num { font-size: 18px; font-weight: 600; display: block; }
+
+  .info .name { font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 15px; color: var(--ink); margin: 0 0 2px; }
+  .info .notes { font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+  .info .coord-caption {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--indigo-soft);
+    margin: 3px 0 0;
+  }
+
+  .map-pending-badge {
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--foodcoffee);
+    background: rgba(140,74,61,0.08);
+    border: 1.5px solid var(--foodcoffee);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: -10px 0 18px;
+  }
+  .clear-pending-btn {
+    background: none;
+    border: none;
+    color: var(--foodcoffee);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+  .clear-pending-btn:hover { background: rgba(140,74,61,0.16); }
+
+  .map-link {
+    text-decoration: none;
+    font-size: 13px;
+    margin-left: 5px;
+    opacity: 0.8;
+    cursor: pointer;
+  }
+  .map-link:hover { opacity: 1; }
+
+  .must-btn { background: none; border: none; font-size: 20px; cursor: pointer; line-height: 1; color: var(--border); padding: 4px; }
+  .must-btn.active { color: var(--city-color); }
+
+  .del-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--ink-soft); padding: 4px 6px; border-radius: 4px; }
+  .del-btn:hover { color: var(--kyoto); background: rgba(166,48,60,0.08); }
+
+  .empty-state {
+    text-align: center;
+    padding: 36px 16px;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+  }
+
+  .status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-align: center;
+    margin-top: 18px;
+    min-height: 14px;
+  }
+
+  .cross-section { margin-top: 18px; padding-top: 14px; border-top: 1.5px dashed var(--border); }
+  .cross-heading {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--foodcoffee);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .cross-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cross-chip {
+    text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(140,74,61,0.08);
+    border: 1px solid var(--foodcoffee);
+    color: var(--foodcoffee);
+  }
+  .cross-chip:hover { background: rgba(140,74,61,0.16); }
+
+  .day-group { margin-bottom: 22px; }
+  .day-group + .day-group { border-top: 1px dashed var(--border); padding-top: 18px; }
+  .day-group-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .day-group-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--group-color, var(--indigo));
+    padding: 3px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .day-group-theme {
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+  .unsorted-group { border: 1.5px dashed var(--pending); background: rgba(184,133,58,0.06); border-radius: 8px; padding: 14px 14px 4px; margin-bottom: 24px; }
+  .unsorted-badge { background: var(--pending); }
+  .unsorted-theme {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    font-style: italic;
+    color: var(--pending);
+  }
+
+  /* ---------- Fuji / Kawaguchiko stay tracker (scoped) ---------- */
+  #view-fuji-stays{
+    --fuji-bg:#EEF1F0;
+    --fuji-card:#FFFFFF;
+    --fuji-ink:#14181A;
+    --fuji-ink-soft:#5B655F;
+    --fuji-green:#3F7D45;
+    --fuji-green-soft:#E6EFE1;
+    --fuji-red:#B8412B;
+    --fuji-red-soft:#F5E1DA;
+    --fuji-amber:#C9922E;
+    --fuji-line:#D7DCD8;
+    --fuji-muted:#8B958F;
+    --fuji-sky:#2B6CA3;
+    --fuji-sky-soft:#E3EEF6;
+  }
+  #view-fuji-stays #tracker-root{
+    background:var(--fuji-bg);
+    color:var(--fuji-ink);
+    font-family:'Inter',sans-serif;
+    padding:32px 20px 48px;
+    border-radius:12px;
+  }
+  #view-fuji-stays .masthead{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom:2px solid var(--fuji-ink);
+    padding-bottom:16px;
+    margin-bottom:16px;
+  }
+  #view-fuji-stays .masthead h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(22px,4vw,32px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin:0;
+    text-transform:uppercase;
+  }
+  #view-fuji-stays .masthead .sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--fuji-ink-soft);
+    margin-top:4px;
+  }
+  #view-fuji-stays .masthead .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--fuji-muted);
+    text-align:right;
+  }
+  #view-fuji-stays .legend{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--fuji-muted);
+    margin-bottom:28px;
+    line-height:1.6;
+    display:block;
+    text-align:left;
+  }
+  #view-fuji-stays .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:18px;
+    margin-bottom:20px;
+  }
+  #view-fuji-stays .ticket{
+    position:relative;
+    background:var(--fuji-card);
+    border-radius:10px;
+    border:1px solid var(--fuji-line);
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(20,24,26,0.04);
+  }
+  #view-fuji-stays .area-ribbon{
+    background:var(--fuji-sky);
+    color:#fff;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.03em;
+    padding:4px 16px;
+  }
+  #view-fuji-stays .ticket .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:14px 16px 10px;
+    gap:10px;
+  }
+  #view-fuji-stays .ticket h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15.5px;
+    font-weight:600;
+    margin:0 0 3px;
+    line-height:1.25;
+  }
+  #view-fuji-stays .ticket h3 a{
+    color:var(--fuji-ink);
+    text-decoration:none;
+    border-bottom:1.5px solid var(--fuji-amber);
+    transition:color 0.15s ease, border-color 0.15s ease;
+  }
+  #view-fuji-stays .ticket h3 a:hover{
+    color:var(--fuji-amber);
+    border-color:var(--fuji-ink);
+  }
+  #view-fuji-stays .ticket .loc{
+    font-size:12px;
+    color:var(--fuji-ink-soft);
+    line-height:1.4;
+  }
+  #view-fuji-stays .drive-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--fuji-sky);
+    background:var(--fuji-sky-soft);
+    padding:2px 8px;
+    border-radius:10px;
+    margin-top:6px;
+    margin-right:5px;
+  }
+  #view-fuji-stays .drive-tag.car-warning{
+    color:#fff;
+    background:var(--fuji-red);
+    font-weight:600;
+  }
+  #view-fuji-stays .fuji-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--fuji-green);
+    background:var(--fuji-green-soft);
+    padding:2px 8px;
+    border-radius:10px;
+    margin-top:6px;
+  }
+  #view-fuji-stays .price-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--fuji-ink-soft);
+    margin-top:6px;
+  }
+  #view-fuji-stays .price-tag .amt{
+    font-weight:500;
+    color:var(--fuji-ink);
+  }
+  #view-fuji-stays .rating-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    font-weight:500;
+    color:#8A5A15;
+    background:#F3E6CE;
+    padding:4px 10px;
+    border-radius:10px;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #view-fuji-stays .book-note{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--fuji-muted);
+    padding:0 16px 10px;
+  }
+  #view-fuji-stays .split{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  #view-fuji-stays .split::before{
+    content:'';
+    position:absolute;
+    top:0;bottom:0;left:50%;
+    border-left:2px dashed var(--fuji-line);
+  }
+  #view-fuji-stays .notch-top,#view-fuji-stays .notch-bottom{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    width:14px;height:14px;
+    border-radius:50%;
+    background:var(--fuji-bg);
+    z-index:2;
+  }
+  #view-fuji-stays .notch-top{top:-7px;}
+  #view-fuji-stays .notch-bottom{bottom:-7px;}
+  #view-fuji-stays .half{
+    padding:12px 14px 16px;
+  }
+  #view-fuji-stays .half.pros{background:var(--fuji-green-soft);}
+  #view-fuji-stays .half.cons{background:var(--fuji-red-soft);}
+  #view-fuji-stays .half .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.06em;
+    margin-bottom:8px;
+    font-weight:500;
+  }
+  #view-fuji-stays .half.pros .label{color:var(--fuji-green);}
+  #view-fuji-stays .half.cons .label{color:var(--fuji-red);}
+  #view-fuji-stays .half ul{
+    margin:0;
+    padding-left:16px;
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--fuji-ink);
+  }
+  #view-fuji-stays .half li{margin-bottom:5px;}
+  #view-fuji-stays .half li:last-child{margin-bottom:0;}
+
+  #view-fuji-stays .rating-widget {
+    grid-column: 1 / -1;
+    padding: 10px 16px 14px;
+    border-top: 1px dashed var(--fuji-line);
+  }
+  #view-fuji-stays .rating-existing { display:flex; flex-direction:column; gap:3px; margin-bottom:6px; }
+  #view-fuji-stays .rating-person-row { font-size: 11px; color: var(--fuji-ink-soft); display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+  #view-fuji-stays .rating-person-name { font-family:'IBM Plex Mono',monospace; font-weight:600; color: var(--fuji-sky); }
+  #view-fuji-stays .rating-stars-display { color: var(--fuji-amber); letter-spacing:1px; }
+  #view-fuji-stays .rating-comment-display { font-style:italic; }
+  #view-fuji-stays .rating-input-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  #view-fuji-stays .rating-star-btn { background:none;border:none;font-size:16px;cursor:pointer;color:var(--fuji-line);padding:1px; line-height:1; }
+  #view-fuji-stays .rating-star-btn.filled { color: var(--fuji-amber); }
+  #view-fuji-stays .rating-comment-input {
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;
+    padding:4px 8px;
+    border-radius:4px;
+    border:1px solid var(--fuji-line);
+    flex:1 1 140px;
+    min-width:100px;
+  }
+  #view-fuji-stays .cluster-map-wrap{
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid var(--fuji-line);
+    margin-top:6px;
+    height:340px;
+  }
+  #view-fuji-stays .cluster-map-caption{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--fuji-muted);
+    padding:6px 4px 0;
+    display:flex;
+    justify-content:space-between;
+  }
+  #view-fuji-stays .cluster-map-caption a{color:var(--fuji-ink-soft);}
+  #view-fuji-stays .stay-pin{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+    transform:translate(-14px,-14px);
+  }
+  #view-fuji-stays .stay-pin .icon{
+    width:28px;height:28px;
+    border-radius:8px;
+    background:#2B6CA3;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    box-shadow:0 1px 3px rgba(0,0,0,0.35);
+    border:2px solid #fff;
+    flex-shrink:0;
+  }
+  #view-fuji-stays .stay-pin .label{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    color:#1a1a1a;
+    background:rgba(255,255,255,0.92);
+    padding:2px 7px;
+    border-radius:5px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.15);
+  }
+  #view-fuji-stays .landmark-pin{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+    transform:translate(-10px,-10px);
+  }
+  #view-fuji-stays .landmark-pin .icon{
+    width:20px;height:20px;
+    border-radius:50%;
+    background:#8B958F;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.35);
+    border:2px solid #fff;
+    flex-shrink:0;
+  }
+  #view-fuji-stays .landmark-pin .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:#5B655F;
+    background:rgba(255,255,255,0.9);
+    padding:1px 6px;
+    border-radius:4px;
+  }
+  @media (max-width:520px){
+    #view-fuji-stays .split{grid-template-columns:1fr;}
+    #view-fuji-stays .split::before{display:none;}
+    #view-fuji-stays .half.pros{border-bottom:2px dashed var(--fuji-line);}
+    #view-fuji-stays .notch-top,#view-fuji-stays .notch-bottom{display:none;}
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stamp { animation: none; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="header">
+    <div class="eyebrow">Kippu &middot; All-in-One Trip Planner</div>
+    <h1>Japan, Oct 24 &ndash; Nov 7, 2026</h1>
+    <p>Narita in, Haneda out &middot; one place for the plan and the wishlist</p>
+    <p id="viewOnlyNotice" style="display:none; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--indigo-soft);">👁️ View-only link &mdash; editing happens on the owner's copy</p>
+  </div>
+
+  <div class="name-bar">
+    <span>👤 Rating as:</span>
+    <input type="text" id="personNameInput" placeholder="Your name" maxlength="24" />
+  </div>
+
+  <div class="mode-switch">
+    <button class="mode-btn active" id="btnItinerary" type="button">📋 Trip Overview</button>
+    <button class="mode-btn" id="btnAttractions" type="button">📖 Detailed Itinerary</button>
+    <button class="mode-btn" id="btnFujiStays" type="button">🏔️ Fuji Stays</button>
+    <button class="mode-btn" id="btnRatingsSummary" type="button">⭐ Ratings Summary</button>
+  </div>
+  <div style="text-align:center; margin-bottom: 24px;">
+    <button class="clear-btn" id="exportBtn" type="button">⬇ Export snapshot to send</button>
+  </div>
+
+  <!-- ================= ITINERARY VIEW ================= -->
+  <div class="view active" id="view-itinerary">
+
+    <div class="legend">
+      <span><span class="dot" style="background:var(--tokyo)"></span>Tokyo</span>
+      <span><span class="dot" style="background:var(--hakone)"></span>Hakone</span>
+      <span><span class="dot" style="background:var(--kawaguchiko)"></span>Kawaguchiko</span>
+      <span><span class="dot" style="background:var(--kyoto)"></span>Kyoto</span>
+      <span><span class="dot" style="background:var(--nara)"></span>Nara</span>
+      <span><span class="dot" style="background:var(--osaka)"></span>Osaka</span>
+      <span><span class="dot" style="background:var(--pending)"></span>Decision pending</span>
+    </div>
+
+    <div class="itin-edit-bar">
+      <button class="clear-btn" id="editItinBtn" type="button">✏️ Edit Itinerary</button>
+      <span class="itin-edit-hint" id="itinEditHint" style="display:none;">Click any theme or activity text below to edit it directly.</span>
+      <button class="add-btn" id="saveItinBtn" type="button" style="display:none;">💾 Save Changes</button>
+      <button class="clear-btn" id="cancelItinBtn" type="button" style="display:none;">✕ Cancel</button>
+    </div>
+
+    <table class="itinerary">
+      <thead>
+        <tr>
+          <th style="width:10%">Day</th>
+          <th style="width:32%">Theme</th>
+          <th>Activities</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr style="--city-color:var(--tokyo)" data-day="1">
+          <td class="day-cell">Day 1<span class="date">Sat, Oct 24</span></td>
+          <td class="theme-cell"><span class="tag" data-day="1">Tokyo</span><select class="city-select" data-day="1" style="display:none;"></select><br><span class="theme-text" data-day="1">Arrival &amp; Asakusa</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="1">Land Narita 12:55pm, transfer into the city, evening at Senso-ji.</span><div class="tracker-addons" data-day="1"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--tokyo)" data-day="2">
+          <td class="day-cell">Day 2<span class="date">Sun, Oct 25</span></td>
+          <td class="theme-cell"><span class="tag" data-day="2">Tokyo</span><select class="city-select" data-day="2" style="display:none;"></select><br><span class="theme-text" data-day="2">Tsukiji &amp; Omakase</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="2">Tsukiji Outer Market (go early), omakase dinner in Ginza that evening.</span><div class="tracker-addons" data-day="2"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--tokyo)" data-day="3">
+          <td class="day-cell">Day 3<span class="date">Mon, Oct 26</span></td>
+          <td class="theme-cell"><span class="tag" data-day="3">Tokyo</span><select class="city-select" data-day="3" style="display:none;"></select><br><span class="theme-text" data-day="3">Shibuya &amp; Digital Art</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="3">Meiji Jingu, Shibuya Crossing, teamLab Planets (book ahead).</span><div class="tracker-addons" data-day="3"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--tokyo)" data-day="4">
+          <td class="day-cell">Day 4<span class="date">Tue, Oct 27</span></td>
+          <td class="theme-cell"><span class="tag" data-day="4">Tokyo</span><select class="city-select" data-day="4" style="display:none;"></select><br><span class="theme-text" data-day="4">Tokyo DisneySea</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="4">Full day. Book via official site, opens 2 months ahead at 2pm JST (~Aug 27). Premier Access for Fantasy Springs + Tower of Terror.</span><div class="tracker-addons" data-day="4"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--kyoto)" data-day="5">
+          <td class="day-cell">Day 5<span class="date">Wed, Oct 28</span></td>
+          <td class="theme-cell"><span class="tag" data-day="5">Kyoto</span><select class="city-select" data-day="5" style="display:none;"></select><br><span class="theme-text" data-day="5">Travel to Kyoto &amp; Gion</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="5">Direct Shinkansen from Tokyo (~2.5hrs), evening wander through Gion.</span><div class="tracker-addons" data-day="5"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--kyoto)" data-day="6">
+          <td class="day-cell">Day 6<span class="date">Thu, Oct 29</span></td>
+          <td class="theme-cell"><span class="tag" data-day="6">Kyoto</span><select class="city-select" data-day="6" style="display:none;"></select><br><span class="theme-text" data-day="6">Shrines &amp; Temples</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="6">Fushimi Inari at 7am to beat the crowds, Kiyomizu-dera + Sannenzaka in the afternoon.</span><div class="tracker-addons" data-day="6"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--kyoto)" data-day="7">
+          <td class="day-cell">Day 7<span class="date">Fri, Oct 30</span></td>
+          <td class="theme-cell"><span class="tag" data-day="7">Kyoto</span><select class="city-select" data-day="7" style="display:none;"></select><br><span class="theme-text" data-day="7">Arashiyama &amp; Nijo</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="7">Bamboo Grove at opening time, Nijo Castle in the afternoon.</span><div class="tracker-addons" data-day="7"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--kyoto)" data-day="8">
+          <td class="day-cell">Day 8<span class="date">Sat, Oct 31</span></td>
+          <td class="theme-cell"><span class="tag" data-day="8">Kyoto</span><select class="city-select" data-day="8" style="display:none;"></select><br><span class="theme-text" data-day="8">Kinkaku-ji &amp; Philosopher's Path</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="8">Kinkaku-ji (Golden Pavilion) early, then the Philosopher's Path to Ginkaku-ji (Silver Pavilion).</span><div class="tracker-addons" data-day="8"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--nara)" data-day="9">
+          <td class="day-cell">Day 9<span class="date">Sun, Nov 1</span></td>
+          <td class="theme-cell"><span class="tag" data-day="9">Nara</span><select class="city-select" data-day="9" style="display:none;"></select><br><span class="theme-text" data-day="9">Day Trip</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="9">Todai-ji (early, big Buddha), Nara Park (deer crackers, cash only).</span><div class="tracker-addons" data-day="9"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--osaka)" data-day="10">
+          <td class="day-cell">Day 10<span class="date">Mon, Nov 2</span></td>
+          <td class="theme-cell"><span class="tag" data-day="10">Osaka</span><select class="city-select" data-day="10" style="display:none;"></select><br><span class="theme-text" data-day="10">Universal Studios Japan</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="10">Full day. Book Studio Pass online in advance; consider Express Pass given 2026 anniversary crowds.</span><div class="tracker-addons" data-day="10"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--osaka)" data-day="11">
+          <td class="day-cell">Day 11<span class="date">Tue, Nov 3</span></td>
+          <td class="theme-cell"><span class="tag" data-day="11">Osaka</span><select class="city-select" data-day="11" style="display:none;"></select><br><span class="theme-text" data-day="11">Castle &amp; Omakase</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="11">Osaka Castle, Dotonbori street food, omakase dinner in the evening.</span><div class="tracker-addons" data-day="11"></div></td>
+        </tr>
+
+        <tr class="pending" style="--city-color:var(--pending)" data-day="12">
+          <td class="day-cell">Day 12<span class="date">Wed, Nov 4</span></td>
+          <td class="theme-cell"><span class="tag pending-tag" data-day="12">Decision pending</span><select class="city-select" data-day="12" style="display:none;"></select><br><span class="theme-text" data-day="12">Travel to Hakone <em>or</em> Kawaguchiko</span></td>
+          <td class="notes-cell">
+            <span class="plan-text" data-day="12">Shinkansen from Osaka &mdash; Hakone is a direct stop via Odawara; Kawaguchiko needs a transfer via Mishima/Shin-Fuji + bus.<br>
+            Afternoon at Owakudani/Lake Ashi (Hakone) or Lake Kawaguchi (Kawaguchiko), onsen ryokan evening.</span>
+            <span class="pending-note">See comparison below</span>
+            <div class="tracker-addons" data-day="12"></div>
+          </td>
+        </tr>
+
+        <tr class="pending" style="--city-color:var(--pending)" data-day="13">
+          <td class="day-cell">Day 13<span class="date">Thu, Nov 5</span></td>
+          <td class="theme-cell"><span class="tag pending-tag" data-day="13">Decision pending</span><select class="city-select" data-day="13" style="display:none;"></select><br><span class="theme-text" data-day="13">Hakone <em>or</em> Kawaguchiko</span></td>
+          <td class="notes-cell">
+            <span class="plan-text" data-day="13"><strong>If Hakone:</strong> Full day &mdash; ropeway, cruise, more onsen time.<br>
+            <strong>If Kawaguchiko:</strong> Sunrise at Chureito Pagoda (398 steps) then Tenku no Torii hike, both by ~9&ndash;10am &mdash; a scenic finale before heading back.</span>
+            <div class="tracker-addons" data-day="13"></div>
+          </td>
+        </tr>
+
+        <tr style="--city-color:var(--tokyo)" data-day="14">
+          <td class="day-cell">Day 14<span class="date">Fri, Nov 6</span></td>
+          <td class="theme-cell"><span class="tag" data-day="14">Tokyo</span><select class="city-select" data-day="14" style="display:none;"></select><br><span class="theme-text" data-day="14">Back to Tokyo</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="14">Odakyu/Shinkansen from Hakone (~90min) or bus from Kawaguchiko (~2hrs), easy evening in Akihabara.</span><div class="tracker-addons" data-day="14"></div></td>
+        </tr>
+
+        <tr style="--city-color:var(--tokyo)" data-day="15">
+          <td class="day-cell">Day 15<span class="date">Sat, Nov 7</span></td>
+          <td class="theme-cell"><span class="tag" data-day="15">Tokyo</span><select class="city-select" data-day="15" style="display:none;"></select><br><span class="theme-text" data-day="15">Last Day &amp; Departure</span></td>
+          <td class="notes-cell"><span class="plan-text" data-day="15">Light day (Odaiba or last shopping) &mdash; head to Haneda T3 by early evening for the 1:25am Nov 8 flight.</span><div class="tracker-addons" data-day="15"></div></td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <div class="section-break">Hakone vs Kawaguchiko</div>
+    <p class="compare-intro">Context for the Day 12&ndash;13 decision above &mdash; both sit near Mt. Fuji but offer very different days.</p>
+
+    <table class="compare">
+      <thead>
+        <tr>
+          <th class="aspect-col">Aspect</th>
+          <th class="hakone-col">Hakone</th>
+          <th class="kawaguchiko-col">Kawaguchiko</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="aspect">Location</td><td>Kanagawa, southeast of Fuji</td><td>Yamanashi, north side of Fuji</td></tr>
+        <tr><td class="aspect">Main draw</td><td>Volcanic valley (Owakudani), lake cruise, onsen resort town</td><td>Two iconic Fuji + torii/pagoda photo spots, lakeside town</td></tr>
+        <tr><td class="aspect">Signature experience</td><td>Ropeway over active sulfur vents, black eggs, Lake Ashi pirate-ship cruise</td><td>Chureito Pagoda (398 steps) + Tenku no Torii hike</td></tr>
+        <tr><td class="aspect">Fuji visibility</td><td>Only from certain spots &mdash; often partial or hazy</td><td>The entire point of the visit &mdash; both shrines are built to frame Fuji</td></tr>
+        <tr><td class="aspect">Feel</td><td>A resort loop &mdash; varied attractions all day</td><td>Two intense photo-hikes, otherwise a quiet lake town</td></tr>
+        <tr><td class="aspect">Best time of day</td><td>Any time; ropeway runs 9am&ndash;5pm</td><td>Sunrise/early morning specifically &mdash; Fuji clouds over by late morning</td></tr>
+        <tr><td class="aspect">Transport from Osaka</td><td>Shinkansen direct to Odawara, ~2.5&ndash;3 hrs</td><td>Shinkansen to Mishima/Shin-Fuji + bus transfer, ~3.5&ndash;4 hrs</td></tr>
+        <tr><td class="aspect">Onsen/ryokan</td><td>Extensive, some of Japan's best-known ryokan</td><td>Also plentiful, many with lake + Fuji views</td></tr>
+        <tr><td class="aspect">Effort required</td><td>Mostly ropeway/cable car &mdash; low physical effort</td><td>398 steps + a 20&ndash;30 min uphill hike, back to back</td></tr>
+        <tr><td class="aspect">Crowds</td><td>Heavy, especially weekends</td><td>Chureito Pagoda busy at sunrise; Tenku no Torii much quieter</td></tr>
+        <tr><td class="aspect">Cost</td><td>Hakone Free Pass ~&yen;6,100 covers train/ropeway/cable car/boat/bus</td><td>Mostly bus fares (~&yen;300&ndash;2,000) + small shrine donations (&yen;100&ndash;200)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="verdict">
+      <strong>The trade-off:</strong> Hakone is a fuller, more varied day even if Fuji doesn't show &mdash; you still get the valley, the cruise, the onsen. Kawaguchiko is higher-risk, higher-reward: a clear dawn gets you the exact postcard shot, but a cloudy one means two strenuous hikes for very little, since neither spot has much else to offer beyond the Fuji view itself.
+    </div>
+
+    <div class="section-break">Route Map</div>
+    <p class="compare-intro">Where each stop actually sits, roughly to scale &mdash; north is up.</p>
+
+    <div class="route-map-wrap">
+      <svg viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg" class="route-map" role="img" aria-label="Map of Japan showing the route: Tokyo direct to Kyoto, side trip to Nara, to Osaka, then Hakone or Kawaguchiko on the way back to Tokyo">
+        <defs>
+          <marker id="arrowFwd" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L8,3 z" fill="var(--ink-soft)"></path>
+          </marker>
+          <marker id="arrowReturn" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L8,3 z" fill="var(--tokyo)"></path>
+          </marker>
+        </defs>
+
+        <!-- Sea backdrop -->
+        <rect x="0" y="0" width="800" height="480" fill="#EAF1F3"></rect>
+
+        <!-- Kyushu hint (far west, partial) -->
+        <path d="M 0,430 Q 18,405 38,420 L 34,468 Q 12,460 0,442 Z" fill="var(--border)" opacity="0.7"></path>
+        <!-- Shikoku (south of the Chugoku/Kansai stretch, across the Seto Inland Sea) -->
+        <path d="M 130,375 Q 190,395 260,392 Q 330,388 355,405 Q 330,422 260,418 Q 185,414 125,398 Z" fill="var(--border)" opacity="0.7"></path>
+
+        <!-- Honshu (main island) -->
+        <path d="M 760,70 Q 710,90 660,120 Q 585,140 510,160 Q 460,175 410,190
+                 Q 335,205 260,220 Q 185,235 110,250 Q 75,260 40,270
+                 L 30,395 Q 65,390 100,385 Q 175,368 250,352
+                 Q 325,340 400,325 Q 450,310 500,295 Q 575,272 650,248
+                 Q 700,225 750,205 Z"
+              fill="#F2ECDC" stroke="var(--border)" stroke-width="2"></path>
+
+        <!-- Compass -->
+        <g transform="translate(748,36)" font-family="'JetBrains Mono', monospace">
+          <line x1="0" y1="14" x2="0" y2="-14" stroke="var(--ink-soft)" stroke-width="1.5"></line>
+          <path d="M0,-14 L-4,-6 L4,-6 Z" fill="var(--ink-soft)"></path>
+          <text x="0" y="28" text-anchor="middle" font-size="10" fill="var(--ink-soft)">N</text>
+        </g>
+
+        <!-- Outbound: Tokyo straight to Kyoto, then Osaka -->
+        <path d="M 720,150 Q 580,200 430,255 Q 410,262 392,270"
+              fill="none" stroke="var(--ink-soft)" stroke-width="3"></path>
+        <path d="M 600,193 Q 580,200 560,207" fill="none" stroke="var(--ink-soft)" stroke-width="3" marker-end="url(#arrowFwd)"></path>
+        <path d="M 425,257 Q 412,262 402,266" fill="none" stroke="var(--ink-soft)" stroke-width="3" marker-end="url(#arrowFwd)"></path>
+
+        <!-- Return: Osaka to Hakone/Kawaguchiko, then to Tokyo -->
+        <path d="M 392,270 Q 460,160 575,140 Q 650,145 720,150"
+              fill="none" stroke="var(--tokyo)" stroke-width="2.25" stroke-dasharray="7 6"></path>
+        <path d="M 460,205 Q 480,180 500,163" fill="none" stroke="var(--tokyo)" stroke-width="2.25" stroke-dasharray="5 5" marker-end="url(#arrowReturn)"></path>
+        <path d="M 640,144 Q 665,146 690,148" fill="none" stroke="var(--tokyo)" stroke-width="2.25" stroke-dasharray="5 5" marker-end="url(#arrowReturn)"></path>
+        <text x="470" y="122" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="var(--tokyo)">Day 12 &middot; travel</text>
+        <text x="665" y="128" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="var(--tokyo)">Day 14 &middot; back to Tokyo</text>
+
+        <!-- Nara side branch -->
+        <line x1="420" y1="252" x2="452" y2="300" stroke="var(--border)" stroke-width="2.5" stroke-dasharray="4 4"></line>
+
+        <!-- Tokyo -->
+        <circle cx="720" cy="150" r="13" fill="var(--tokyo)" stroke="#fff" stroke-width="2"></circle>
+        <text x="738" y="146" text-anchor="start" font-family="'Shippori Mincho', serif" font-weight="700" font-size="15" fill="var(--ink)">Tokyo</text>
+        <text x="738" y="162" text-anchor="start" font-family="'JetBrains Mono', monospace" font-size="10" fill="var(--ink-soft)">Day 1&ndash;4, 14&ndash;15</text>
+
+        <!-- Kyoto -->
+        <circle cx="430" cy="255" r="12" fill="var(--kyoto)" stroke="#fff" stroke-width="2"></circle>
+        <text x="430" y="242" text-anchor="middle" font-family="'Shippori Mincho', serif" font-weight="700" font-size="14" fill="var(--ink)">Kyoto</text>
+        <text x="430" y="280" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="var(--ink-soft)">Day 5&ndash;8</text>
+
+        <!-- Osaka -->
+        <circle cx="392" cy="270" r="12" fill="var(--osaka)" stroke="#fff" stroke-width="2"></circle>
+        <text x="392" y="300" text-anchor="middle" font-family="'Shippori Mincho', serif" font-weight="700" font-size="13" fill="var(--ink)">Osaka</text>
+        <text x="392" y="315" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" fill="var(--ink-soft)">Day 10&ndash;11</text>
+
+        <!-- Hakone / Kawaguchiko (pending, on the return leg) -->
+        <circle cx="575" cy="140" r="12" fill="var(--pending)" stroke="#fff" stroke-width="2"></circle>
+        <text x="575" y="118" text-anchor="middle" font-family="'Shippori Mincho', serif" font-weight="700" font-size="12.5" fill="var(--ink)">Hakone / Kawaguchiko</text>
+        <text x="575" y="167" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" fill="var(--pending)">Day 12&ndash;13 &middot; pending</text>
+
+        <!-- Nara (side trip) -->
+        <circle cx="455" cy="305" r="9" fill="var(--nara)" stroke="#fff" stroke-width="2"></circle>
+        <text x="455" y="326" text-anchor="middle" font-family="'Shippori Mincho', serif" font-weight="700" font-size="12" fill="var(--ink)">Nara</text>
+        <text x="455" y="340" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" fill="var(--ink-soft)">Day 9 &middot; day trip</text>
+      </svg>
+      <p class="map-caption">Shikoku and the tip of Kyushu shown in outline for orientation only &mdash; the trip stays entirely on Honshu. Dashed line marks the return leg through Fuji country.</p>
+    </div>
+
+  </div>
+
+  <!-- ================= ATTRACTIONS & FOOD TRACKER VIEW ================= -->
+  <div class="view" id="view-attractions">
+    <div class="tabs" id="tabs"></div>
+    <div class="panel-head">
+      <div class="stamp" id="stamp">
+        <div class="stamp-grain" id="stampGrain"></div>
+        <span id="stampLabel"></span>
+      </div>
+      <button class="clear-btn" id="refreshBtn" type="button">↻ Refresh</button>
+      <button class="clear-btn" id="clearBtn">Clear this list</button>
+    </div>
+    <form class="add-form" id="addForm">
+      <input class="name-input" id="nameInput" type="text" placeholder="Name, or paste a Google Maps link" required />
+      <input class="notes-input" id="notesInput" type="text" placeholder="Notes (address, hours, why it matters, etc.)" />
+      <select class="category-select" id="categorySelect"></select>
+      <select class="day-select" id="daySelect"></select>
+      <button class="add-btn" type="submit">Add stop</button>
+    </form>
+    <div class="map-pending-badge" id="mapPendingBadge" style="display:none;"></div>
+    <div class="list" id="list"></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- ================= FUJI / KAWAGUCHIKO STAY TRACKER VIEW ================= -->
+  <div class="view" id="view-fuji-stays">
+    <div id="tracker-root">
+      <div class="masthead">
+        <div>
+          <h1>Mt. Fuji / Kawaguchiko Stay Tracker</h1>
+          <div class="sub">lakeside &amp; forest stays &middot; pros / cons &middot; drive-based, not train-based</div>
+        </div>
+        <div class="count" id="hotel-count"></div>
+      </div>
+      <div class="legend">&#9733; Ratings are Google Maps review scores out of 5. &middot; Prices in GBP (&pound;), approximate &mdash; not a live quote. &middot; The region itself IS train-accessible (direct "Fuji Excursion" limited express from Shinjuku to Kawaguchiko Station, ~2hrs, or JR Chuo Line + Fujikyuko Line via Otsuki) &mdash; but individual properties then rely on a free hotel shuttle, a short walk, or a taxi/car. &middot; <span style="color:#B8412B;font-weight:600;">Red "CAR NEEDED" tag = no shuttle or train-walkable option exists for that property.</span></div>
+
+      <div class="cards" id="cards-1"></div>
+      <div class="cluster-map-wrap" id="map1-wrap"><div id="map1" style="height:100%;"></div></div>
+      <div class="cluster-map-caption">
+        <span>Blue pin = stay &middot; grey pin = landmark (Fuji summit &amp; Lake Kawaguchi, for reference)</span>
+        <a id="map1-link" href="#" target="_blank" rel="noopener noreferrer">Open in Google Maps &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RATINGS SUMMARY VIEW ================= -->
+  <div class="view" id="view-ratings-summary">
+    <div class="header" style="margin-bottom:20px;">
+      <div class="eyebrow">Kippu &middot; Group Verdict</div>
+      <h1>Ratings Summary</h1>
+      <p>Everything anyone has rated, in one place &mdash; attractions, food, and stays together.</p>
+    </div>
+    <div class="summary-sort-bar">
+      <button class="mode-btn active" id="sortByAvgBtn" type="button">Sort by rating</button>
+      <button class="mode-btn" id="sortByDisagreeBtn" type="button">Sort by disagreement</button>
+    </div>
+    <div id="ratingsSummaryList"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // ---------- View-only mode ----------
+  const urlParams = new URLSearchParams(location.search);
+  let isViewOnly = urlParams.get('view') === '1';
+
+  // ---------- Mode switching ----------
+  const btnItinerary = document.getElementById('btnItinerary');
+  const btnAttractions = document.getElementById('btnAttractions');
+  const btnFujiStays = document.getElementById('btnFujiStays');
+  const btnRatingsSummary = document.getElementById('btnRatingsSummary');
+  const viewItinerary = document.getElementById('view-itinerary');
+  const viewAttractions = document.getElementById('view-attractions');
+  const viewFujiStays = document.getElementById('view-fuji-stays');
+  const viewRatingsSummary = document.getElementById('view-ratings-summary');
+
+  const MODE_PANES = [
+    { btn: btnItinerary, view: viewItinerary },
+    { btn: btnAttractions, view: viewAttractions },
+    { btn: btnFujiStays, view: viewFujiStays },
+    { btn: btnRatingsSummary, view: viewRatingsSummary }
+  ];
+
+  function showMode(activeView) {
+    MODE_PANES.forEach(({ btn, view }) => {
+      const isActive = view === activeView;
+      btn.classList.toggle('active', isActive);
+      view.classList.toggle('active', isActive);
+    });
+    if (activeView === viewFujiStays && window.__fujiMap) {
+      setTimeout(() => window.__fujiMap.invalidateSize(), 50);
+    }
+    if (activeView === viewRatingsSummary) {
+      renderRatingsSummary();
+    }
+  }
+
+  btnItinerary.addEventListener('click', () => showMode(viewItinerary));
+  btnAttractions.addEventListener('click', () => showMode(viewAttractions));
+  btnFujiStays.addEventListener('click', () => showMode(viewFujiStays));
+  btnRatingsSummary.addEventListener('click', () => showMode(viewRatingsSummary));
+
+  // ---------- Itinerary text + city editing ----------
+  const editItinBtn = document.getElementById('editItinBtn');
+  const itinEditHint = document.getElementById('itinEditHint');
+  const saveItinBtn = document.getElementById('saveItinBtn');
+  const cancelItinBtn = document.getElementById('cancelItinBtn');
+  const itineraryTable = document.querySelector('table.itinerary');
+
+  const CITY_TAG_OPTIONS = [
+    { key: 'Tokyo', label: 'Tokyo', color: 'var(--tokyo)', tagClass: 'tag' },
+    { key: 'Kyoto', label: 'Kyoto', color: 'var(--kyoto)', tagClass: 'tag' },
+    { key: 'Nara', label: 'Nara', color: 'var(--nara)', tagClass: 'tag' },
+    { key: 'Osaka', label: 'Osaka', color: 'var(--osaka)', tagClass: 'tag' },
+    { key: 'Hakone', label: 'Hakone / Kawaguchiko (pending)', color: 'var(--pending)', tagClass: 'tag pending-tag', tagText: 'Decision pending', pendingRow: true }
+  ];
+
+  const ORIGINAL_DAY_CITY = {};
+
+  function cityKeyFromColorVar(colorVarStr) {
+    const match = CITY_TAG_OPTIONS.find(c => c.color === colorVarStr);
+    return match ? match.key : 'Tokyo';
+  }
+
+  function snapshotOriginalItineraryText() {
+    document.querySelectorAll('.theme-text, .plan-text').forEach(el => {
+      if (el.dataset.original === undefined) el.dataset.original = el.innerHTML;
+    });
+    document.querySelectorAll('tr[data-day]').forEach(tr => {
+      const day = tr.dataset.day;
+      if (ORIGINAL_DAY_CITY[day] === undefined) {
+        ORIGINAL_DAY_CITY[day] = cityKeyFromColorVar(tr.style.getPropertyValue('--city-color').trim());
+      }
+    });
+  }
+
+  function updateRowCity(day, cityKey) {
+    const opt = CITY_TAG_OPTIONS.find(c => c.key === cityKey) || CITY_TAG_OPTIONS[0];
+    const tr = document.querySelector('tr[data-day="' + day + '"]');
+    const tagEl = document.querySelector('.tag[data-day="' + day + '"]');
+    if (tr) {
+      tr.style.setProperty('--city-color', opt.color);
+      tr.classList.toggle('pending', !!opt.pendingRow);
+    }
+    if (tagEl) {
+      tagEl.className = opt.tagClass;
+      tagEl.textContent = opt.tagText || opt.label;
+    }
+    DAY_CITY_SIMPLE[day] = cityKey;
+  }
+
+  function rebuildDerivedItineraryMappings() {
+    CITIES.forEach(c => {
+      if (c.key === 'Food & Drink') return;
+      const days = Object.keys(DAY_CITY_SIMPLE).map(Number)
+        .filter(d => DAY_CITY_SIMPLE[d] === c.key).sort((a, b) => a - b);
+      CITY_DEFAULT_DAY[c.key] = days.length ? days[0] : '';
+    });
+    DAY_LABELS.forEach(d => {
+      d.place = DAY_CITY_SIMPLE[d.n] || d.place;
+    });
+    document.querySelectorAll('.theme-text').forEach(el => {
+      THEME_BY_DAY[el.dataset.day] = el.textContent.trim();
+    });
+  }
+
+  function populateCitySelects() {
+    document.querySelectorAll('.city-select').forEach(sel => {
+      const day = sel.dataset.day;
+      sel.innerHTML = '';
+      CITY_TAG_OPTIONS.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt.key;
+        o.textContent = opt.label;
+        sel.appendChild(o);
+      });
+      sel.value = DAY_CITY_SIMPLE[day] || ORIGINAL_DAY_CITY[day] || 'Tokyo';
+      sel.addEventListener('change', () => updateRowCity(day, sel.value));
+    });
+  }
+
+  function syncCitySelectValues() {
+    document.querySelectorAll('.city-select').forEach(sel => {
+      sel.value = DAY_CITY_SIMPLE[sel.dataset.day] || sel.value;
+    });
+  }
+
+  function applyItineraryOverrides() {
+    const overrides = (data && data.itineraryText) || {};
+    document.querySelectorAll('.theme-text, .plan-text').forEach(el => {
+      const day = el.dataset.day;
+      const ov = overrides[day];
+      const key = el.classList.contains('theme-text') ? 'theme' : 'notes';
+      if (ov && typeof ov[key] === 'string') {
+        el.innerHTML = ov[key];
+      } else if (el.dataset.original !== undefined) {
+        el.innerHTML = el.dataset.original;
+      }
+    });
+
+    const cityMap = (data && data.dayCityMap) || {};
+    document.querySelectorAll('tr[data-day]').forEach(tr => {
+      const day = tr.dataset.day;
+      updateRowCity(day, cityMap[day] || ORIGINAL_DAY_CITY[day] || 'Tokyo');
+    });
+    rebuildDerivedItineraryMappings();
+    syncCitySelectValues();
+  }
+
+  function setItinEditUI(editing) {
+    itineraryTable.classList.toggle('editing-itin', editing);
+    document.querySelectorAll('.theme-text, .plan-text').forEach(el => {
+      el.contentEditable = editing ? 'true' : 'false';
+    });
+    editItinBtn.style.display = editing ? 'none' : '';
+    itinEditHint.style.display = editing ? '' : 'none';
+    saveItinBtn.style.display = editing ? '' : 'none';
+    cancelItinBtn.style.display = editing ? '' : 'none';
+  }
+
+  editItinBtn.addEventListener('click', () => setItinEditUI(true));
+
+  cancelItinBtn.addEventListener('click', () => {
+    applyItineraryOverrides();
+    setItinEditUI(false);
+  });
+
+  saveItinBtn.addEventListener('click', async () => {
+    data.itineraryText = data.itineraryText || {};
+    document.querySelectorAll('.theme-text').forEach(el => {
+      const day = el.dataset.day;
+      data.itineraryText[day] = data.itineraryText[day] || {};
+      data.itineraryText[day].theme = el.innerHTML.trim();
+    });
+    document.querySelectorAll('.plan-text').forEach(el => {
+      const day = el.dataset.day;
+      data.itineraryText[day] = data.itineraryText[day] || {};
+      data.itineraryText[day].notes = el.innerHTML.trim();
+    });
+
+    data.dayCityMap = data.dayCityMap || {};
+    document.querySelectorAll('.city-select').forEach(sel => {
+      data.dayCityMap[sel.dataset.day] = sel.value;
+    });
+
+    rebuildDerivedItineraryMappings();
+    setItinEditUI(false);
+    renderAll();
+    populateDaySelect();
+    populateCategorySelect();
+    await saveData();
+  });
+
+  // ---------- Ratings & Comments ----------
+  const personNameInput = document.getElementById('personNameInput');
+  personNameInput.value = localStorage.getItem('tripPersonName') || '';
+  personNameInput.addEventListener('change', () => {
+    localStorage.setItem('tripPersonName', personNameInput.value.trim());
+  });
+
+  function getPersonName() {
+    return (localStorage.getItem('tripPersonName') || '').trim();
+  }
+
+  function getRatingsFor(key) {
+    return (data && data.ratings && data.ratings[key]) || {};
+  }
+
+  async function setRating(key, stars, comment) {
+    const name = getPersonName();
+    if (!name) {
+      personNameInput.focus();
+      setStatus('Enter your name above first, then rate.', true);
+      return;
+    }
+    data.ratings = data.ratings || {};
+    data.ratings[key] = data.ratings[key] || {};
+    data.ratings[key][name] = { stars, comment: comment || '', ts: Date.now() };
+    await saveData();
+  }
+
+  function buildRatingWidget(itemKey, refreshCallback) {
+    const wrap = document.createElement('div');
+    wrap.className = 'rating-widget';
+
+    const existingWrap = document.createElement('div');
+    existingWrap.className = 'rating-existing';
+    const ratings = getRatingsFor(itemKey);
+    Object.keys(ratings).forEach(name => {
+      const r = ratings[name];
+      const row = document.createElement('div');
+      row.className = 'rating-person-row';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'rating-person-name';
+      nameEl.textContent = name;
+      const starsEl = document.createElement('span');
+      starsEl.className = 'rating-stars-display';
+      starsEl.textContent = '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars);
+      row.appendChild(nameEl);
+      row.appendChild(starsEl);
+      if (r.comment) {
+        const commentEl = document.createElement('span');
+        commentEl.className = 'rating-comment-display';
+        commentEl.textContent = '"' + r.comment + '"';
+        row.appendChild(commentEl);
+      }
+      existingWrap.appendChild(row);
+    });
+    wrap.appendChild(existingWrap);
+
+    const myName = getPersonName();
+    const mine = ratings[myName] || { stars: 0, comment: '' };
+
+    const inputRow = document.createElement('div');
+    inputRow.className = 'rating-input-row';
+    let currentStars = mine.stars;
+    const starBtns = [];
+    for (let i = 1; i <= 5; i++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rating-star-btn' + (i <= currentStars ? ' filled' : '');
+      b.textContent = i <= currentStars ? '★' : '☆';
+      b.title = i + ' star' + (i > 1 ? 's' : '');
+      b.addEventListener('click', async () => {
+        currentStars = i;
+        starBtns.forEach((btn, idx) => {
+          btn.classList.toggle('filled', idx < currentStars);
+          btn.textContent = idx < currentStars ? '★' : '☆';
+        });
+        await setRating(itemKey, currentStars, commentInput.value.trim());
+        if (refreshCallback) refreshCallback();
+      });
+      starBtns.push(b);
+      inputRow.appendChild(b);
+    }
+    const commentInput = document.createElement('input');
+    commentInput.type = 'text';
+    commentInput.className = 'rating-comment-input';
+    commentInput.placeholder = 'Add a comment (optional)';
+    commentInput.value = mine.comment || '';
+    commentInput.addEventListener('change', async () => {
+      if (currentStars === 0) return;
+      await setRating(itemKey, currentStars, commentInput.value.trim());
+      if (refreshCallback) refreshCallback();
+    });
+    inputRow.appendChild(commentInput);
+    wrap.appendChild(inputRow);
+
+    return wrap;
+  }
+
+  function ratingAverage(ratingsObj) {
+    const vals = Object.values(ratingsObj).map(r => r.stars);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }
+
+  function ratingSpread(ratingsObj) {
+    const vals = Object.values(ratingsObj).map(r => r.stars);
+    if (vals.length < 2) return 0;
+    return Math.max(...vals) - Math.min(...vals);
+  }
+
+  let summarySort = 'avg';
+  function renderRatingsSummary() {
+    const listEl2 = document.getElementById('ratingsSummaryList');
+    listEl2.innerHTML = '';
+    const items = [];
+
+    CITIES.forEach(c => {
+      (data[c.key] || []).forEach(item => {
+        const key = 'attr:' + item.id;
+        const ratingsObj = getRatingsFor(key);
+        if (Object.keys(ratingsObj).length) {
+          items.push({ key, name: item.name, cat: c.key, ratingsObj });
+        }
+      });
+    });
+
+    (window.__fujiStays || []).forEach(h => {
+      const key = 'hotel:' + h.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+      const ratingsObj = getRatingsFor(key);
+      if (Object.keys(ratingsObj).length) {
+        items.push({ key, name: h.name, cat: 'Fuji Stay', ratingsObj });
+      }
+    });
+
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'Nothing rated yet — add a star rating to any attraction, food spot, or stay to see it here.';
+      listEl2.appendChild(empty);
+      return;
+    }
+
+    items.sort((a, b) => {
+      if (summarySort === 'disagree') {
+        return ratingSpread(b.ratingsObj) - ratingSpread(a.ratingsObj);
+      }
+      return (ratingAverage(b.ratingsObj) || 0) - (ratingAverage(a.ratingsObj) || 0);
+    });
+
+    items.forEach(it => {
+      const row = document.createElement('div');
+      row.className = 'summary-row';
+      const avg = ratingAverage(it.ratingsObj);
+      const head = document.createElement('div');
+      head.className = 'summary-row-head';
+      const nameWrap = document.createElement('div');
+      const catEl = document.createElement('div');
+      catEl.className = 'summary-row-cat';
+      catEl.textContent = it.cat;
+      const nameEl = document.createElement('div');
+      nameEl.className = 'summary-row-name';
+      nameEl.textContent = it.name;
+      nameWrap.appendChild(catEl);
+      nameWrap.appendChild(nameEl);
+      const avgEl = document.createElement('div');
+      avgEl.className = 'summary-row-avg';
+      avgEl.textContent = '★ ' + avg.toFixed(1) + ' avg' + (ratingSpread(it.ratingsObj) > 0 ? ' · ' + ratingSpread(it.ratingsObj) + '★ spread' : '');
+      head.appendChild(nameWrap);
+      head.appendChild(avgEl);
+      row.appendChild(head);
+
+      const peopleWrap = document.createElement('div');
+      peopleWrap.className = 'summary-row-people';
+      Object.keys(it.ratingsObj).forEach(name => {
+        const r = it.ratingsObj[name];
+        const pr = document.createElement('div');
+        pr.className = 'rating-person-row';
+        pr.innerHTML = '<span class="rating-person-name">' + name + '</span><span class="rating-stars-display">' +
+          '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars) + '</span>' +
+          (r.comment ? '<span class="rating-comment-display">"' + r.comment + '"</span>' : '');
+        peopleWrap.appendChild(pr);
+      });
+      row.appendChild(peopleWrap);
+      listEl2.appendChild(row);
+    });
+  }
+
+  document.getElementById('sortByAvgBtn').addEventListener('click', () => {
+    summarySort = 'avg';
+    document.getElementById('sortByAvgBtn').classList.add('active');
+    document.getElementById('sortByDisagreeBtn').classList.remove('active');
+    renderRatingsSummary();
+  });
+  document.getElementById('sortByDisagreeBtn').addEventListener('click', () => {
+    summarySort = 'disagree';
+    document.getElementById('sortByDisagreeBtn').classList.add('active');
+    document.getElementById('sortByAvgBtn').classList.remove('active');
+    renderRatingsSummary();
+  });
+
+  // ---------- Attractions & Food tracker ----------
+  const CITIES = [
+    { key: 'Tokyo', label: '東京', color: 'var(--tokyo)' },
+    { key: 'Hakone', label: '箱根', color: 'var(--hakone)' },
+    { key: 'Kyoto', label: '京都', color: 'var(--kyoto)' },
+    { key: 'Nara', label: '奈良', color: 'var(--nara)' },
+    { key: 'Osaka', label: '大阪', color: 'var(--osaka)' },
+    { key: 'Food & Drink', label: '食と珈琲', color: 'var(--foodcoffee)' }
+  ];
+
+  const DAY_LABELS = [
+    { n: 1, date: 'Oct 24', place: 'Tokyo' },
+    { n: 2, date: 'Oct 25', place: 'Tokyo' },
+    { n: 3, date: 'Oct 26', place: 'Tokyo' },
+    { n: 4, date: 'Oct 27', place: 'Tokyo · DisneySea' },
+    { n: 5, date: 'Oct 28', place: 'Travel → Kyoto' },
+    { n: 6, date: 'Oct 29', place: 'Kyoto' },
+    { n: 7, date: 'Oct 30', place: 'Kyoto' },
+    { n: 8, date: 'Oct 31', place: 'Kyoto' },
+    { n: 9, date: 'Nov 1', place: 'Nara' },
+    { n: 10, date: 'Nov 2', place: 'Osaka · USJ' },
+    { n: 11, date: 'Nov 3', place: 'Osaka' },
+    { n: 12, date: 'Nov 4', place: 'Travel → Hakone/Kawaguchiko' },
+    { n: 13, date: 'Nov 5', place: 'Hakone / Kawaguchiko' },
+    { n: 14, date: 'Nov 6', place: 'Tokyo' },
+    { n: 15, date: 'Nov 7', place: 'Tokyo' }
+  ];
+
+  function dayLabelFull(d) { return 'Day ' + d.n + ' · ' + d.date + ' · ' + d.place; }
+  function dayLabelShort(d) { return 'D' + d.n + ' · ' + d.place; }
+
+  const DAY_CITY_SIMPLE = {
+    1: 'Tokyo', 2: 'Tokyo', 3: 'Tokyo', 4: 'Tokyo',
+    5: 'Kyoto', 6: 'Kyoto', 7: 'Kyoto', 8: 'Kyoto',
+    9: 'Nara', 10: 'Osaka', 11: 'Osaka', 12: 'Hakone',
+    13: 'Hakone', 14: 'Tokyo', 15: 'Tokyo'
+  };
+
+  function buildMapsUrl(item, city) {
+    if (item.mapUrl) return item.mapUrl;
+    const context = (city.key === 'Food & Drink')
+      ? (item.day ? (DAY_CITY_SIMPLE[item.day] || '') : '')
+      : city.key;
+    const query = [item.name, context].filter(Boolean).join(' ');
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
+  }
+
+  function parseMapsLink(text) {
+    let url;
+    try {
+      url = new URL(text);
+    } catch (e) {
+      return null;
+    }
+    const isMapsy = (url.hostname.includes('google.') && url.pathname.includes('/maps'))
+      || url.hostname === 'maps.app.goo.gl'
+      || (url.hostname === 'goo.gl' && url.pathname.startsWith('/maps'));
+    if (!isMapsy) return null;
+
+    let name = null;
+    const placeMatch = url.pathname.match(/\/place\/([^\/]+)/);
+    if (placeMatch) {
+      name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    } else if (url.searchParams.get('q')) {
+      name = decodeURIComponent(url.searchParams.get('q').replace(/\+/g, ' '));
+    }
+
+    let lat = null, lng = null;
+    const coordMatch = (url.pathname + url.search).match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coordMatch) {
+      lat = parseFloat(coordMatch[1]);
+      lng = parseFloat(coordMatch[2]);
+    }
+
+    return { url: text, name, lat, lng };
+  }
+
+  function shortLinkLabel(url) {
+    try {
+      const u = new URL(url);
+      const path = u.pathname.length > 1 ? u.pathname.slice(0, 14) : '';
+      return u.hostname + path + (u.pathname.length > 14 ? '…' : '');
+    } catch (e) {
+      return url.slice(0, 28) + '…';
+    }
+  }
+
+  function renderMapPendingBadge() {
+    mapPendingBadge.innerHTML = '';
+    if (!pendingMapUrl) {
+      mapPendingBadge.style.display = 'none';
+      return;
+    }
+    mapPendingBadge.style.display = 'flex';
+    const label = document.createElement('span');
+    label.textContent = pendingMapCoords
+      ? '🔗 Link attached · 📍 ' + pendingMapCoords.lat.toFixed(4) + ', ' + pendingMapCoords.lng.toFixed(4) + ' — finish the details and hit Add'
+      : '🔗 Link attached (' + shortLinkLabel(pendingMapUrl) + ') — type a name and finish the details';
+    mapPendingBadge.appendChild(label);
+    const clearPendingBtn = document.createElement('button');
+    clearPendingBtn.type = 'button';
+    clearPendingBtn.className = 'clear-pending-btn';
+    clearPendingBtn.textContent = '✕ remove link';
+    clearPendingBtn.title = 'Remove attached link';
+    clearPendingBtn.addEventListener('click', () => {
+      pendingMapUrl = null;
+      pendingMapCoords = null;
+      renderMapPendingBadge();
+    });
+    mapPendingBadge.appendChild(clearPendingBtn);
+  }
+
+  const CITY_DEFAULT_DAY = {
+    'Tokyo': 1, 'Hakone': 12, 'Kyoto': 6, 'Nara': 9,
+    'Osaka': 10, 'Food & Drink': ''
+  };
+
+  const THEME_BY_DAY = {
+    1: 'Arrival & Asakusa',
+    2: 'Tsukiji & Omakase',
+    3: 'Shibuya & Digital Art',
+    4: 'Tokyo DisneySea',
+    5: 'Travel to Kyoto & Gion',
+    6: 'Kyoto Shrines & Temples',
+    7: 'Arashiyama & Nijo',
+    8: "Kinkaku-ji & Philosopher's Path",
+    9: 'Day Trip: Nara',
+    10: 'Universal Studios Japan',
+    11: 'Osaka Castle & Omakase',
+    12: 'Travel to Hakone or Kawaguchiko — pending',
+    13: 'Hakone or Kawaguchiko — pending',
+    14: 'Back to Tokyo',
+    15: 'Last Day & Departure'
+  };
+
+  function daysForCity(cityKey) {
+    return Object.keys(DAY_CITY_SIMPLE).map(Number)
+      .filter(d => DAY_CITY_SIMPLE[d] === cityKey)
+      .sort((a, b) => a - b);
+  }
+
+  const CATEGORIES = [
+    { key: '', label: 'No category', color: null },
+    { key: 'coffee', label: '☕ Coffee / Cafe', color: 'var(--cat-coffee)' },
+    { key: 'breakfast', label: '🍳 Breakfast', color: 'var(--cat-breakfast)' },
+    { key: 'lunch', label: '🍱 Lunch', color: 'var(--cat-lunch)' },
+    { key: 'dinner', label: '🍽️ Dinner', color: 'var(--cat-dinner)' },
+    { key: 'snack', label: '🍡 Snack / Street food', color: 'var(--cat-snack)' }
+  ];
+
+  const NPOINT_URL = 'https://api.npoint.io/08fbf28c35f335e6ebe0';
+  let data = emptyData();
+  let activeCity = CITIES[0].key;
+  let dragItemId = null;
+  let pendingMapUrl = null;
+  let pendingMapCoords = null;
+
+  const tabsEl = document.getElementById('tabs');
+  const listEl = document.getElementById('list');
+  const stampEl = document.getElementById('stamp');
+  const stampLabelEl = document.getElementById('stampLabel');
+  const stampGrainEl = document.getElementById('stampGrain');
+  const statusEl = document.getElementById('status');
+  const addForm = document.getElementById('addForm');
+  const nameInput = document.getElementById('nameInput');
+  const notesInput = document.getElementById('notesInput');
+  const daySelect = document.getElementById('daySelect');
+  const categorySelect = document.getElementById('categorySelect');
+  const clearBtn = document.getElementById('clearBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const mapPendingBadge = document.getElementById('mapPendingBadge');
+
+  function uid() {
+    return (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+  }
+
+  const FOOD_COFFEE_SEED = [
+    { name: 'Koffee Mameya Kakeru', day: 14, category: 'coffee', notes: 'Kiyosumi-Shirakawa, Tokyo. Omakase-style coffee tasting course. Reservation required (TableCheck). Mon–Fri 10am–5pm, Sat–Sun 9am–5pm.' },
+    { name: 'Kielo Coffee', day: 1, category: 'coffee', notes: 'Asakusa (also an Akihabara branch). Minimalist specialty cafe, lattes + pour-overs. ~9am–10pm.' },
+    { name: '%Arabica Higashiyama', day: 6, category: 'coffee', notes: '87-5 Hoshinocho, Higashiyama-ku, Kyoto. On the walk between Yasaka Pagoda and Kiyomizu-dera. 8am–6pm daily. Arrive before 9:30am to skip the worst of the line.' },
+    { name: '%Arabica Arashiyama', day: 7, category: 'coffee', notes: '3-47 Sagatenryuji Susukinobabacho, Ukyo-ku, Kyoto. Riverside spot by Togetsu-kyo Bridge. 8am–6pm daily.' },
+    { name: 'Nishiki Market', day: 6, category: 'snack', notes: 'Central Kyoto, "Kyoto\'s Kitchen." Grazing street food — skewers, pickles, tofu snacks. Good fit with your Fushimi Inari / Kiyomizu day.' },
+    { name: 'Ult Coffee', day: 11, category: 'coffee', notes: '1-11-6 Kyomachibori, Nishi-ku, Osaka. World Barista Champion-founded, #24 on World\'s 100 Best Coffee Shops 2026. 10am–5pm, closed Sundays.' },
+    { name: 'Nakazakicho', day: 11, category: 'coffee', notes: 'Osaka neighborhood near Umeda — alleyways full of independent cafes, good for a casual coffee-hop.' }
+  ];
+
+  function emptyData() {
+    const d = {};
+    CITIES.forEach(c => d[c.key] = []);
+    return d;
+  }
+
+  let hasAttemptedSeed = false;
+
+  async function loadData() {
+    try {
+      const res = await fetchWithRetry(NPOINT_URL);
+      if (!res.ok) throw new Error('fetch failed: ' + res.status);
+      const parsed = await res.json();
+      data = Object.assign(emptyData(), parsed);
+    } catch (e) {
+      console.error('Load failed', e);
+      setStatus('Could not reach the server — showing last-known data.', true);
+      if (!data) data = emptyData();
+      return; // never touch/seed/save on a failed fetch — keep whatever's already in memory
+    }
+    if (data['Food & Coffee'] && !data['Food & Drink']) {
+      data['Food & Drink'] = data['Food & Coffee'];
+      delete data['Food & Coffee'];
+    }
+    if (!data.__seededFoodCoffee && !hasAttemptedSeed) {
+      hasAttemptedSeed = true;
+      data['Food & Drink'] = FOOD_COFFEE_SEED.map(item => ({ id: uid(), name: item.name, notes: item.notes, day: item.day || '', category: item.category || '', mustSee: false }));
+      data.__seededFoodCoffee = true;
+      await saveData();
+    }
+  }
+
+  async function fetchWithRetry(url, options, retries) {
+    retries = retries === undefined ? 1 : retries;
+    try {
+      const res = await fetch(url, options || { cache: 'no-store' });
+      if (!res.ok && retries > 0) {
+        await new Promise(r => setTimeout(r, 800));
+        return fetchWithRetry(url, options, retries - 1);
+      }
+      return res;
+    } catch (e) {
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, 800));
+        return fetchWithRetry(url, options, retries - 1);
+      }
+      throw e;
+    }
+  }
+
+  async function saveData() {
+    const body = JSON.stringify(data);
+    const opts = { headers: { 'Content-Type': 'application/json' }, body };
+    try {
+      let res = await fetchWithRetry(NPOINT_URL, Object.assign({ method: 'POST' }, opts));
+      if (!res.ok) {
+        res = await fetchWithRetry(NPOINT_URL, Object.assign({ method: 'PUT' }, opts));
+      }
+      if (!res.ok) throw new Error('save failed: ' + res.status);
+      setStatus('Saved.', false);
+      return true;
+    } catch (e) {
+      console.error('Save failed', e);
+      setStatus('Could not save — check your connection and try again.', true);
+      return false;
+    }
+  }
+
+  let statusTimer = null;
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg;
+    statusEl.style.color = isError ? 'var(--kyoto)' : 'var(--ink-soft)';
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(() => { statusEl.textContent = ''; }, 1800);
+  }
+
+  function populateDaySelect() {
+    daySelect.innerHTML = '';
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = 'Unassigned';
+    daySelect.appendChild(noneOpt);
+    DAY_LABELS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.n;
+      opt.textContent = dayLabelFull(d);
+      daySelect.appendChild(opt);
+    });
+    daySelect.value = CITY_DEFAULT_DAY[activeCity] || '';
+  }
+
+  function populateCategorySelect() {
+    categorySelect.innerHTML = '';
+    CATEGORIES.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.key;
+      opt.textContent = cat.label;
+      categorySelect.appendChild(opt);
+    });
+    categorySelect.style.display = (activeCity === 'Food & Drink') ? '' : 'none';
+  }
+
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    CITIES.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn' + (c.key === activeCity ? ' active' : '');
+      btn.style.setProperty('--city-color', c.color);
+      btn.textContent = c.key;
+      btn.addEventListener('click', () => {
+        activeCity = c.key;
+        renderAll();
+        populateDaySelect();
+        populateCategorySelect();
+      });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function renderStamp() {
+    const city = CITIES.find(c => c.key === activeCity);
+    stampEl.style.setProperty('--city-color', city.color);
+    stampLabelEl.textContent = city.label;
+    stampLabelEl.style.color = city.color;
+    stampGrainEl.style.background =
+      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+  }
+
+  function buildCard(item, displayRank, arr, colorVar) {
+    const card = document.createElement('div');
+    card.className = 'card' + (isViewOnly ? ' view-only' : '');
+    card.style.setProperty('--city-color', colorVar);
+
+    if (!isViewOnly) {
+      card.draggable = true;
+      card.addEventListener('dragstart', () => {
+        dragItemId = item.id;
+        card.classList.add('dragging');
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+      });
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        card.classList.add('drag-over');
+      });
+      card.addEventListener('dragleave', () => {
+        card.classList.remove('drag-over');
+      });
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        if (!dragItemId || dragItemId === item.id) return;
+        const fromIdx = arr.findIndex(i => i.id === dragItemId);
+        const toIdx = arr.findIndex(i => i.id === item.id);
+        if (fromIdx === -1 || toIdx === -1) return;
+        const [moved] = arr.splice(fromIdx, 1);
+        arr.splice(toIdx, 0, moved);
+        dragItemId = null;
+        saveData();
+        renderList();
+      });
+    }
+
+    const rank = document.createElement('div');
+    rank.className = 'rank';
+    rank.innerHTML = 'No.<span class="num">' + String(displayRank).padStart(2, '0') + '</span>';
+
+    const info = document.createElement('div');
+    info.className = 'info';
+    if (item.category) {
+      const cat = CATEGORIES.find(c => c.key === item.category);
+      if (cat) {
+        const badge = document.createElement('span');
+        badge.className = 'cat-badge';
+        badge.style.setProperty('--cat-color', cat.color);
+        badge.textContent = cat.label;
+        info.appendChild(badge);
+        info.appendChild(document.createElement('br'));
+      }
+    }
+    const name = document.createElement('p');
+    name.className = 'name';
+    const nameText = document.createElement('span');
+    nameText.textContent = item.name;
+    name.appendChild(nameText);
+    const mapLink = document.createElement('a');
+    mapLink.className = 'map-link';
+    mapLink.href = buildMapsUrl(item, CITIES.find(c => c.color === colorVar) || CITIES[0]);
+    mapLink.target = '_blank';
+    mapLink.rel = 'noopener noreferrer';
+    mapLink.title = 'Open in Google Maps';
+    mapLink.textContent = '📍';
+    name.appendChild(mapLink);
+    info.appendChild(name);
+    if (item.notes) {
+      const notes = document.createElement('p');
+      notes.className = 'notes';
+      notes.textContent = item.notes;
+      info.appendChild(notes);
+    }
+    if (item.lat && item.lng) {
+      const coord = document.createElement('p');
+      coord.className = 'coord-caption';
+      coord.textContent = '📍 ' + Number(item.lat).toFixed(4) + ', ' + Number(item.lng).toFixed(4);
+      info.appendChild(coord);
+    } else if (item.mapUrl) {
+      const coord = document.createElement('p');
+      coord.className = 'coord-caption';
+      coord.textContent = '🔗 ' + shortLinkLabel(item.mapUrl);
+      info.appendChild(coord);
+    }
+
+    info.appendChild(buildRatingWidget('attr:' + item.id, () => renderList()));
+
+    if (isViewOnly) {
+      if (item.mustSee) {
+        const star = document.createElement('span');
+        star.className = 'must-btn active';
+        star.style.setProperty('--city-color', colorVar);
+        star.textContent = '★';
+        card.appendChild(rank);
+        card.appendChild(info);
+        card.appendChild(star);
+      } else {
+        card.appendChild(rank);
+        card.appendChild(info);
+      }
+      return card;
+    }
+
+    const mustBtn = document.createElement('button');
+    mustBtn.className = 'must-btn' + (item.mustSee ? ' active' : '');
+    mustBtn.style.setProperty('--city-color', colorVar);
+    mustBtn.title = item.mustSee ? 'Marked as must-see' : 'Mark as must-see';
+    mustBtn.textContent = item.mustSee ? '★' : '☆';
+    mustBtn.addEventListener('click', () => {
+      item.mustSee = !item.mustSee;
+      saveData();
+      renderList();
+    });
+
+    const dayWrap = document.createElement('select');
+    dayWrap.className = 'card-day-select';
+    dayWrap.title = 'Which day this belongs to';
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = '— Day —';
+    dayWrap.appendChild(noneOpt);
+    DAY_LABELS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.n;
+      opt.textContent = dayLabelShort(d);
+      dayWrap.appendChild(opt);
+    });
+    dayWrap.value = item.day || '';
+    dayWrap.addEventListener('change', () => {
+      item.day = dayWrap.value ? parseInt(dayWrap.value, 10) : '';
+      saveData();
+      renderList();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.title = 'Remove';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => {
+      const i = arr.findIndex(x => x.id === item.id);
+      if (i !== -1) arr.splice(i, 1);
+      saveData();
+      renderList();
+    });
+
+    card.appendChild(rank);
+    card.appendChild(info);
+    card.appendChild(dayWrap);
+    card.appendChild(mustBtn);
+    card.appendChild(delBtn);
+    return card;
+  }
+
+  function buildUnsortedGroup(items, arr, colorVar) {
+    const sec = document.createElement('div');
+    sec.className = 'day-group unsorted-group';
+    const head = document.createElement('div');
+    head.className = 'day-group-head';
+    head.innerHTML = '<span class="day-group-badge unsorted-badge">📌 Unsorted</span>' +
+      '<span class="day-group-theme unsorted-theme">Not yet assigned to a day — pick one below</span>';
+    sec.appendChild(head);
+    items.forEach((item, i) => sec.appendChild(buildCard(item, i + 1, arr, colorVar)));
+    return sec;
+  }
+
+  function buildFoodCoffeeChips(items) {
+    const fc = CITIES.find(c => c.key === 'Food & Drink');
+    const wrap = document.createElement('div');
+    wrap.className = 'cross-chips';
+    wrap.style.marginTop = '6px';
+    items.forEach(item => {
+      const chip = document.createElement('a');
+      chip.className = 'cross-chip';
+      chip.href = buildMapsUrl(item, fc);
+      chip.target = '_blank';
+      chip.rel = 'noopener noreferrer';
+      chip.textContent = (item.mustSee ? '★ ' : '') + item.name;
+      wrap.appendChild(chip);
+    });
+    return wrap;
+  }
+
+  function renderCityByDay(city, container) {
+    container = container || listEl;
+    const arr = data[city.key] || [];
+    const unassigned = arr.filter(i => !i.day);
+    let renderedAnything = false;
+
+    if (unassigned.length) {
+      container.appendChild(buildUnsortedGroup(unassigned, arr, city.color));
+      renderedAnything = true;
+    }
+
+    daysForCity(city.key).forEach(dayNum => {
+      const dayItems = arr.filter(i => i.day === dayNum);
+      const fcItems = (data['Food & Drink'] || []).filter(i => i.day === dayNum);
+      if (!dayItems.length && !fcItems.length) return;
+      renderedAnything = true;
+
+      const sec = document.createElement('div');
+      sec.className = 'day-group';
+      const meta = DAY_LABELS.find(d => d.n === dayNum);
+      const head = document.createElement('div');
+      head.className = 'day-group-head';
+      head.style.setProperty('--group-color', city.color);
+      head.innerHTML = '<span class="day-group-badge">Day ' + dayNum + ' · ' + (meta ? meta.date : '') + '</span>' +
+        '<span class="day-group-theme">' + (THEME_BY_DAY[dayNum] || '') + '</span>';
+      sec.appendChild(head);
+
+      dayItems.forEach((item, i) => sec.appendChild(buildCard(item, i + 1, arr, city.color)));
+      if (fcItems.length) sec.appendChild(buildFoodCoffeeChips(fcItems));
+
+      container.appendChild(sec);
+    });
+
+    if (!renderedAnything) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'No stops added yet — add your first ' + city.key + ' entry above.';
+      container.appendChild(empty);
+    }
+  }
+
+  function renderFoodCoffeeByDay(container) {
+    container = container || listEl;
+    const arr = data['Food & Drink'] || [];
+    const unassigned = arr.filter(i => !i.day);
+    let renderedAnything = false;
+
+    if (unassigned.length) {
+      container.appendChild(buildUnsortedGroup(unassigned, arr, 'var(--foodcoffee)'));
+      renderedAnything = true;
+    }
+
+    const usedDays = Array.from(new Set(arr.filter(i => i.day).map(i => i.day))).sort((a, b) => a - b);
+    usedDays.forEach(dayNum => {
+      const dayItems = arr.filter(i => i.day === dayNum);
+      if (!dayItems.length) return;
+      renderedAnything = true;
+
+      const sec = document.createElement('div');
+      sec.className = 'day-group';
+      const meta = DAY_LABELS.find(d => d.n === dayNum);
+      const head = document.createElement('div');
+      head.className = 'day-group-head';
+      head.style.setProperty('--group-color', 'var(--foodcoffee)');
+      head.innerHTML = '<span class="day-group-badge">Day ' + dayNum + ' · ' + (meta ? meta.date : '') + '</span>' +
+        '<span class="day-group-theme">' + (meta ? meta.place : '') + '</span>';
+      sec.appendChild(head);
+
+      dayItems.forEach((item, i) => sec.appendChild(buildCard(item, i + 1, arr, 'var(--foodcoffee)')));
+      container.appendChild(sec);
+    });
+
+    if (!renderedAnything) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'No stops added yet — add your first Food & Drink entry above.';
+      container.appendChild(empty);
+    }
+  }
+
+  function renderList() {
+    const city = CITIES.find(c => c.key === activeCity);
+    listEl.innerHTML = '';
+
+    if (city.key === 'Food & Drink') {
+      renderFoodCoffeeByDay();
+    } else {
+      renderCityByDay(city);
+    }
+
+    renderItineraryAddons();
+  }
+
+  function renderItineraryAddons() {
+    document.querySelectorAll('.tracker-addons').forEach(el => { el.innerHTML = ''; });
+    CITIES.forEach(c => {
+      (data[c.key] || []).forEach(item => {
+        if (!item.day) return;
+        const container = document.querySelector('.tracker-addons[data-day="' + item.day + '"]');
+        if (!container) return;
+        const chip = document.createElement('div');
+        chip.className = 'addon-chip';
+        chip.style.setProperty('--chip-color', c.color);
+        let prefix = item.mustSee ? '★ ' : '';
+        if (item.category) {
+          const cat = CATEGORIES.find(x => x.key === item.category);
+          if (cat) prefix += cat.label.split(' ')[0] + ' ';
+        }
+        chip.textContent = prefix + item.name;
+        container.appendChild(chip);
+      });
+    });
+  }
+
+  function renderAll() {
+    renderTabs();
+    renderStamp();
+    renderList();
+  }
+
+  nameInput.addEventListener('paste', (e) => {
+    const text = (e.clipboardData || window.clipboardData).getData('text').trim();
+    const parsed = parseMapsLink(text);
+    if (!parsed) {
+      pendingMapUrl = null;
+      pendingMapCoords = null;
+      renderMapPendingBadge();
+      return;
+    }
+    e.preventDefault();
+    pendingMapUrl = parsed.url;
+    pendingMapCoords = (parsed.lat && parsed.lng) ? { lat: parsed.lat, lng: parsed.lng } : null;
+    renderMapPendingBadge();
+    if (parsed.name) {
+      nameInput.value = parsed.name;
+      setStatus('Grabbed from Google Maps.', false);
+    } else {
+      nameInput.value = '';
+      setStatus('Short link saved — type the place name to go with it.', false);
+    }
+  });
+
+  addForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    if (!name) return;
+    const notes = notesInput.value.trim();
+    const day = daySelect.value ? parseInt(daySelect.value, 10) : '';
+    const category = activeCity === 'Food & Drink' ? categorySelect.value : '';
+    const mapUrl = pendingMapUrl || '';
+    const lat = pendingMapCoords ? pendingMapCoords.lat : '';
+    const lng = pendingMapCoords ? pendingMapCoords.lng : '';
+    data[activeCity].push({ id: uid(), name, notes, day, category, mustSee: false, mapUrl, lat, lng });
+    pendingMapUrl = null;
+    pendingMapCoords = null;
+    renderMapPendingBadge();
+    nameInput.value = '';
+    notesInput.value = '';
+    daySelect.value = CITY_DEFAULT_DAY[activeCity] || '';
+    categorySelect.value = '';
+    saveData();
+    renderList();
+    nameInput.focus();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    if (!data[activeCity].length) return;
+    if (confirm('Clear all ' + activeCity + ' entries? This cannot be undone.')) {
+      data[activeCity] = [];
+      saveData();
+      renderList();
+    }
+  });
+
+  refreshBtn.addEventListener('click', async () => {
+    setStatus('Checking for updates…', false);
+    await loadData();
+    renderAll();
+    if (!itineraryTable.classList.contains('editing-itin')) applyItineraryOverrides();
+    setStatus('Up to date.', false);
+  });
+
+  exportBtn.addEventListener('click', () => {
+    const headHtml = document.head.innerHTML;
+
+    const tripOverviewClone = document.getElementById('view-itinerary').cloneNode(true);
+    tripOverviewClone.className = 'view active';
+    const tripOverviewHtml = tripOverviewClone.outerHTML;
+
+    const wasViewOnly = isViewOnly;
+    isViewOnly = true;
+
+    let detailedHtml = '<div class="header" style="margin-top:46px;">' +
+      '<div class="eyebrow">Kippu &middot; Snapshot</div>' +
+      '<h1>Detailed Itinerary</h1>' +
+      '<p>Frozen copy from ' + new Date().toLocaleDateString() + ' &mdash; ask for an updated link for the latest version.</p>' +
+      '</div>';
+
+    CITIES.forEach(city => {
+      const section = document.createElement('div');
+      const heading = document.createElement('div');
+      heading.className = 'section-break';
+      heading.textContent = city.key;
+      section.appendChild(heading);
+      const body = document.createElement('div');
+      if (city.key === 'Food & Drink') {
+        renderFoodCoffeeByDay(body);
+      } else {
+        renderCityByDay(city, body);
+      }
+      section.appendChild(body);
+      detailedHtml += section.outerHTML;
+    });
+
+    isViewOnly = wasViewOnly;
+
+    const fullHtml = '<!DOCTYPE html><html lang="en"><head>' + headHtml + '</head><body><div id="app">' +
+      tripOverviewHtml + detailedHtml + '</div></body></html>';
+
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'japan-trip-snapshot.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setStatus('Snapshot downloaded.', false);
+  });
+
+  (async function init() {
+    setStatus('Loading your tracker…', false);
+    snapshotOriginalItineraryText();
+    if (isViewOnly) {
+      document.getElementById('viewOnlyNotice').style.display = 'block';
+      addForm.style.display = 'none';
+      clearBtn.style.display = 'none';
+      editItinBtn.style.display = 'none';
+    }
+    window.__trip = {
+      getData: () => data,
+      saveData: saveData,
+      getPersonName: getPersonName,
+      buildRatingWidget: buildRatingWidget
+    };
+    await loadData();
+    applyItineraryOverrides();
+    populateCitySelects();
+    setStatus('', false);
+    renderAll();
+    populateDaySelect();
+    populateCategorySelect();
+    window.dispatchEvent(new CustomEvent('tripDataReady'));
+    setInterval(async () => {
+      await loadData();
+      renderAll();
+      if (!itineraryTable.classList.contains('editing-itin')) applyItineraryOverrides();
+      window.dispatchEvent(new CustomEvent('tripDataReady'));
+    }, 20000);
+  })();
+})();
+</script>
+
+<!-- ================= FUJI / KAWAGUCHIKO STAY TRACKER SCRIPT ================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+
+  const stays = [
+    {
+      name: "The Noborisaka Hotel",
+      type: "Budget Hotel",
+      loc: "Area C &middot; Funatsu, Fujikawaguchiko — closest of the three to Fuji-Q Highland / Fujiyoshida side",
+      drive: "15–25 min walk to Kawaguchiko Station (no late bus)",
+      fuji: "Fuji view — ask for 3rd floor or higher",
+      rating: 4.3,
+      lat: 35.4892464, lng: 138.7627242,
+      bookingUrl: "https://www.booking.com/hotel/jp/noborizaka.html",
+      priceRange: "£42–86",
+      pros: ["Closest of the three to central Fuji/Fujiyoshida area", "Easy to book — on all major OTAs (Booking, Agoda, Expedia)", "Buffet breakfast consistently praised", "Affordable for the Fuji view you get", "On-site onsen/sauna"],
+      cons: ["Must book early — popular, sells out in high season", "Ask for 3rd floor or above — lower floors can have blocked Fuji views", "15–25 min walk from Kawaguchiko Station; last local bus is early (~5pm), taxis scarce at night", "A couple of reports of inconsistent front-desk service"]
+    },
+    {
+      name: "夢見る河口湖 コテージ戸沢センター (Cottage Tozawa Center)",
+      type: "Self-Catering Cottage",
+      loc: "Area A &middot; Oishi, north shore of Lake Kawaguchi — near Oishi Park, one of the best Fuji-over-lake photo spots",
+      drive: "~15 min drive to Kawaguchiko Station; no shuttle offered, book direct only",
+      carOnly: true,
+      fuji: "Unobstructed Fuji-over-lake view",
+      rating: 4.4,
+      lat: 35.5227051, lng: 138.7538461,
+      bookingUrl: "https://www.k-tozawa.com/cottage.php#cottage_price",
+      priceRange: "£58–120 (smaller cottages; larger group cottages run higher)",
+      pros: ["Highest Google rating of the three", "Kitchen in every unit + restaurant downstairs on site", "Can BBQ on site (charcoal house or terrace, small fee)", "Affordable for the quality of Fuji/lake view", "Lakeside, near a private beach-access spot"],
+      cons: ["Basic amenities — towels/toiletries often need requesting or bringing your own", "Thin walls — noise from neighbouring cottages reported", "Cleanliness inconsistent in a few reviews (bedding, mattress comfort)", "Only bookable via their own website (k-tozawa.com) — no price comparison across OTAs"]
+    },
+    {
+      name: "Rakuten STAY VILLA Fuji Kawaguchiko Forest",
+      type: "Private Villa",
+      area: "",
+      loc: "Funatsu, Fujikawaguchiko — forest setting away from the lake shore",
+      drive: "~10 min drive to Kawaguchiko Station / town centre; no public transport link at all",
+      carOnly: true,
+      fuji: "No direct Fuji view — forest/nature setting instead",
+      rating: 4.1,
+      lat: 35.4787481, lng: 138.7605931,
+      bookingUrl: "https://www.agoda.com/en-gb/rakuten-stay-villa-lake-kawaguchiko-forest-h31581954/hotel/fujikawaguchiko-jp.html",
+      priceRange: "£190–340 (whole private villa, up to 8–10 people)",
+      pros: ["Modern, newly built (2022) architecture", "Full kitchen for cooking, in every villa", "Private sauna + artificial hot spring bath in every unit", "Great for stargazing — forest setting, low light pollution", "Whole-villa privacy, good for groups; some pet-friendly units"],
+      cons: ["No public transport nearby — a car is essential", "Priciest per night of the three (though it's a whole villa, not a room)", "Thin walls between villas reported by some guests", "Unmanned check-in (self-service via tablet) — can be fiddly for first-timers"]
+    },
+    {
+      name: "Mizno Hotel (水之家酒店/湖之飯店)",
+      type: "Onsen Ryokan (Boutique)",
+      loc: "Azagawa, Fujikawaguchiko — lakeside, boutique-scale (not a big chain)",
+      drive: "Free shuttle from Kawaguchiko Station, 15:00–18:00 (call hotel on arrival)",
+      fuji: "Private balcony Fuji + lake views; visible from bed in some rooms",
+      rating: 4.7,
+      lat: 35.5137708, lng: 138.7736759,
+      bookingUrl: "https://www.booking.com/hotel/jp/mizuno.html",
+      priceRange: "£137+ (double room, low-season starting rate)",
+      pros: ["Highest Google rating of every stay tracked for this trip (4.7/5)", "Private balcony with direct Fuji/lake view in top rooms", "Rooftop Sky Bar with 180° Fuji views", "Both indoor and outdoor onsen overlook the lake", "Free bicycle rental, quality yukata + capsule coffee machine in-room"],
+      cons: ["Boutique-scale — fewer rooms than the big resort hotels, likely to sell out first in high season", "Premium pricing to match the experience", "Fuji view is of course weather-dependent, same risk as anywhere on the lake"]
+    },
+    {
+      name: "Koraku Onyado Fujiginkei (富士吟景旅館)",
+      type: "Onsen Ryokan",
+      loc: "Azagawa, Fujikawaguchiko — traditional ryokan style",
+      drive: "Free shuttle from Kawaguchiko Station, 14:30–20:00 window",
+      fuji: "Rooftop outdoor onsen + new-wing rooms face Fuji/lake; occasional 'reverse Fuji' reflection",
+      rating: 4.5,
+      lat: 35.5134672, lng: 138.7726216,
+      bookingUrl: "https://www.booking.com/hotel/jp/koraku-onyado-fujiginkei.html",
+      priceRange: "£121+ (double room, low-season starting rate)",
+      pros: ["Traditional kaiseki dinner and breakfast consistently praised", "Rooftop + indoor onsen both well-reviewed, Fuji views from the bath", "Some Chinese-speaking staff on-site", "Free shuttle service to/from Kawaguchiko Station"],
+      cons: ["Ask specifically for the new wing and a higher floor — old wing / lower floors can have the view partially blocked", "Shuttle only runs in a set afternoon/evening window — need to time your arrival", "About a 10-min walk to the nearest convenience store (Lawson)"]
+    },
+    {
+      name: "La Vista Fuji Kawaguchiko",
+      type: "Onsen Resort",
+      loc: "Kawaguchi, Fujikawaguchiko — hillside, South-of-France themed",
+      drive: "Free shuttle to/from Kawaguchiko Station, ~20 min",
+      fuji: "Most rooms face Fuji directly; some have heart-shaped in-room tubs",
+      rating: 4.4,
+      lat: 35.5296567, lng: 138.7627726,
+      bookingUrl: "https://www.booking.com/hotel/jp/la-vista-fujikawaguchiko.html",
+      priceRange: "£100+ (double room, lowest starting rate of the 6 onsen options)",
+      pros: ["Lowest starting price of the onsen-ryokan group here, without giving up the Fuji view", "Provence/South-France theming is distinctive and very photogenic", "4 types of onsen including private rental baths", "Free late-night ramen + popsicles after bathing", "Free shuttle bus to/from Kawaguchiko Station"],
+      cons: ["No restaurants or convenience stores nearby — stock up before heading up the hill", "One detailed report of a power outage disrupting a stay (handled well by staff, but worth knowing)", "Can feel a little dated in parts despite the theming"]
+    },
+    {
+      name: "Fujisan Onsen Hotel Kaneyamaen (鐘山苑飯店)",
+      type: "Onsen Resort (Large)",
+      loc: "Kamiyoshidahigashi, Fujiyoshida — near Fuji-Q Highland side of town",
+      drive: "Free shuttle every 30 min to/from Fujisan Station",
+      fuji: "Rooftop open-air onsen + many rooms with a direct Fuji view",
+      rating: 4.4,
+      lat: 35.4667086, lng: 138.8133878,
+      bookingUrl: "https://www.booking.com/hotel/jp/kaneyamaen.html",
+      priceRange: "£301+ (double room, low-season starting rate)",
+      pros: ["Nationally recognised — listed among Japan's top 250 onsen ryokan per the source article", "Large traditional Japanese garden (~25,000 tsubo) with seasonal scenery", "Nightly taiko drum show plus seasonal events (cherry blossom, fireflies, fireworks, autumn leaves, New Year)", "Frequent free shuttle (every 30 min) to Fujisan Station", "Resort-scale facilities: pool, wine lounge, wedding chapel"],
+      cons: ["Highest price bracket of the mid-tier options here", "Shuttle-dependent rather than walkable to anything", "Large resort feel rather than an intimate ryokan experience"]
+    },
+    {
+      name: "Bessho Sasa (然然別墅)",
+      type: "Onsen Ryokan (Luxury)",
+      loc: "Same complex as Kaneyamaen, upper executive floors (4th–5th)",
+      drive: "Free shuttle every 30 min to/from Fujisan Station",
+      fuji: "Every room has its own private open-air Fuji-view bath",
+      rating: 4.5,
+      lat: 35.466587, lng: 138.8131301,
+      bookingUrl: "https://www.booking.com/hotel/jp/bessho-sasa.html",
+      priceRange: "£545+ (double room, low-season starting rate) — by far the priciest stay tracked for this trip",
+      pros: ["Private open-air onsen with a Fuji view in every single room (not just some, unlike Kaneyamaen)", "Private guest lounge with free coffee/wine and massage chairs facing Fuji", "In-room kaiseki dinner — more exclusive than Kaneyamaen's shared dining room", "Shares Kaneyamaen's garden and facilities, plus its own perks on top"],
+      cons: ["By far the most expensive option in this entire tracker — roughly 4–5x the mid-range options", "One detailed review flagged the premium wagyu dinner as underwhelming for the price", "Still shuttle-dependent, same as Kaneyamaen"]
+    },
+    {
+      name: "Ubuya (産屋飯店)",
+      type: "Onsen Ryokan",
+      loc: "Azagawa, Fujikawaguchiko — directly on the lake",
+      drive: "Free shuttle to/from Kawaguchiko Station",
+      fuji: "Every room guarantees a Fuji view — no exceptions",
+      rating: 4.4,
+      lat: 35.512822, lng: 138.7689064,
+      bookingUrl: "https://www.ubuya.co.jp/en/",
+      priceRange: "£308+ (double room, low-season starting rate)",
+      pros: ["100% of rooms guarantee a Fuji view — no risk of a blocked-view room like some competitors", "Arguably the best straight-on lake+Fuji sightline of the whole group", "Free shuttle to/from Kawaguchiko Station", "A fun differentiator: small photo studio with Fuji-themed costumes for photos"],
+      cons: ["Recurring complaint: the 'private bath' rooms are just a regular tub with tap water, not a real private onsen — worth confirming before paying the upsell", "Buffet breakfast/dinner quality gets mixed reviews relative to the price point", "Booking the balcony-onsen room specifically can be finicky — one reviewer said it only worked via certain language versions of the site"]
+    },
+    {
+      name: "Konansou (湖南莊)",
+      type: "Onsen Ryokan",
+      loc: "Funatsu, Fujikawaguchiko — lakeside, south shore near the sightseeing-boat pier",
+      drive: "Free shuttle from Kawaguchiko Station (9am–5pm, call on arrival) or ~10 min walk",
+      fuji: "Rooftop footbath + 3 private onsen baths, all with Fuji views; some Fuji-facing rooms",
+      rating: 4.7,
+      lat: 35.5036357, lng: 138.7684111,
+      bookingUrl: "https://www.booking.com/hotel/jp/konanso.html",
+      priceRange: "£235+ (double room, low-season starting rate)",
+      pros: ["Tied for the highest rating in this entire tracker (4.7/5, 1,600+ reviews — the most-reviewed property here)", "Rooftop footbath + 3 reservable private onsen baths, all with Fuji views", "In-room kaiseki dinner consistently praised as a trip highlight", "Most transport-flexible option here — walkable (~10 min) AND has a free shuttle, so it works with or without a shuttle booking"],
+      cons: ["Premium pricing — starts around £235 and climbs for Fuji-view or private-onsen rooms", "A handful of reviews mention dated interiors in spots and inconsistent staff attitude toward some guest groups", "Fuji-view rooms sell out first — you may end up with a lake-view room instead"]
+    }
+  ];
+
+  const landmarks = [
+    { name: "Mt. Fuji summit", lat: 35.3606, lng: 138.7274 },
+    { name: "Lake Kawaguchi", lat: 35.5065, lng: 138.7455 }
+  ];
+
+  function hotelKey(h) {
+    return 'hotel:' + h.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+  }
+
+  function renderCards(containerId, data){
+    const container = document.getElementById(containerId);
+    container.innerHTML = data.map(h => `
+      <div class="ticket" data-hotel-key="${hotelKey(h)}">
+        ${h.type ? `<div class="area-ribbon">${h.type}</div>` : ''}
+        <div class="top">
+          <div>
+            <h3><a href="${h.bookingUrl}" target="_blank" rel="noopener noreferrer">${h.name}</a></h3>
+            <div class="loc">${h.loc}</div>
+            <div class="drive-tag${h.carOnly ? ' car-warning' : ''}">${h.carOnly ? '⚠️ CAR NEEDED — ' : '🚌 '}${h.drive}</div>
+            <div class="fuji-tag">🗻 ${h.fuji}</div>
+            <div class="price-tag">Indicative rate: <span class="amt">${h.priceRange}</span>/night</div>
+          </div>
+          <div class="rating-tag">${h.rating.toFixed(1)}/5 Google</div>
+        </div>
+        <div class="split">
+          <div class="notch-top"></div>
+          <div class="half pros">
+            <div class="label">PROS</div>
+            <ul>${h.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>
+          <div class="half cons">
+            <div class="label">CONS</div>
+            <ul>${h.cons.map(c => `<li>${c}</li>`).join('')}</ul>
+          </div>
+          <div class="notch-bottom"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderHotelRatings() {
+    if (!window.__trip || !window.__trip.buildRatingWidget) return;
+    document.querySelectorAll('#view-fuji-stays .ticket[data-hotel-key]').forEach(ticket => {
+      const key = ticket.dataset.hotelKey;
+      const existing = ticket.querySelector('.rating-widget');
+      if (existing) existing.remove();
+      ticket.appendChild(window.__trip.buildRatingWidget(key, renderHotelRatings));
+    });
+  }
+
+  window.addEventListener('tripDataReady', renderHotelRatings);
+
+  function setMap(elId, linkId, data, landmarks){
+    const map = L.map(elId, {scrollWheelZoom:true}).setView([data[0].lat, data[0].lng], 12);
+    window.__fujiMap = map;
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 19
+    }).addTo(map);
+    const bounds = [];
+    landmarks.forEach(l => {
+      const icon = L.divIcon({
+        html: `<div class="landmark-pin"><div class="icon">🗻</div><div class="label">${l.name}</div></div>`,
+        className: '', iconSize: null, iconAnchor: [10, 10]
+      });
+      L.marker([l.lat, l.lng], {icon}).addTo(map).bindPopup(`<b>${l.name}</b>`);
+      bounds.push([l.lat, l.lng]);
+    });
+    data.forEach((h, i) => {
+      const icon = L.divIcon({
+        html: `<div class="stay-pin"><div class="icon">${i+1}</div><div class="label">${h.name.split('(')[0].split(',')[0].slice(0,22)}</div></div>`,
+        className: '', iconSize: null, iconAnchor: [14, 14]
+      });
+      const marker = L.marker([h.lat, h.lng], {icon}).addTo(map);
+      marker.bindPopup(`<b>${h.name}</b><br/>${h.rating.toFixed(1)}/5 Google &middot; ${h.drive}`);
+      bounds.push([h.lat, h.lng]);
+    });
+    if (bounds.length > 1) map.fitBounds(bounds, {padding:[40,40]});
+    const pts = data.map(h => `${h.lat},${h.lng}`).join('/');
+    document.getElementById(linkId).href = `https://www.google.com/maps/dir/${pts}?hl=en`;
+  }
+
+  renderCards('cards-1', stays);
+  document.getElementById('hotel-count').textContent = stays.length + ' stays tracked';
+  setMap('map1', 'map1-link', stays, landmarks);
+  window.__fujiStays = stays;
+  if (window.__trip) renderHotelRatings();
+
+})();
+</script>
+</body>
+</html>
